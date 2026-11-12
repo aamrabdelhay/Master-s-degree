@@ -1,0 +1,511 @@
+/* ============================================================
+   الهوية البصرية — منسوخة من الملف المرجعي
+   Senior Year — Final Examination Schedule 2026
+   ============================================================ */
+
+:root {
+  --primary: #0f172a;
+  --gold: #c5a059;
+  --glass-card: rgba(255, 255, 255, 0.85);
+  --arabic-font: 'Amiri', serif;
+  --english-title: 'Cinzel', serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f1f5f9;
+  margin: 0;
+  overflow-x: hidden;
+  direction: rtl;
+  font-family: var(--arabic-font);
+  color: var(--primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --------- الميزان المتحرك في الخلفية --------- */
+.bg-legal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(200px, 40vw, 500px);
+  color: rgba(197, 160, 89, 0.05);
+  z-index: -1;
+  pointer-events: none;
+  animation: slowSwing 15s infinite ease-in-out;
+  line-height: 1;
+  user-select: none;
+}
+
+@keyframes slowSwing {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) rotate(-5deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(5deg) scale(1.05);
+  }
+}
+
+/* --------- الهيدر --------- */
+header {
+  padding: 60px 20px 82px;
+  text-align: center;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: white;
+  border-bottom: 5px solid var(--gold);
+  clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%);
+  position: relative;
+}
+
+.main-title {
+  font-family: var(--english-title), var(--arabic-font);
+  font-size: clamp(1.5rem, 5vw, 2.8rem);
+  /* العربي مايتحطش عليه letter-spacing عشان الحروف تفضل متصلة */
+  letter-spacing: normal;
+  margin: 0;
+  color: var(--gold);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.sub-title {
+  font-family: 'Playfair Display', var(--arabic-font), serif;
+  font-size: clamp(1rem, 3vw, 1.8rem);
+  font-style: normal;
+  margin-top: 10px;
+  opacity: 0.9;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* لو العنوان إنجليزي — نفس تنسيق الملف المرجعي (letter-spacing + italic) */
+.main-title.latin {
+  letter-spacing: 2px;
+}
+
+.sub-title.latin {
+  font-style: italic;
+}
+
+/* --------- الحاوية --------- */
+.container {
+  max-width: 950px;
+  margin: 40px auto;
+  padding: 0 15px;
+}
+
+/* --------- الكارت --------- */
+.subject-card {
+  background: var(--glass-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+  margin-bottom: 50px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(197, 160, 89, 0.3);
+  overflow: hidden;
+  scroll-margin-top: 20px;
+}
+
+.card-header {
+  padding: 25px;
+  background: rgba(15, 23, 42, 0.03);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+}
+
+.subject-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.subject-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.exam-date {
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.exam-date span.icon {
+  color: var(--gold);
+  font-size: 0.95rem;
+}
+
+.done-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #e2e8f0;
+  color: #334155;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  margin-inline-start: 8px;
+  vertical-align: middle;
+}
+
+/* --------- التايمر --------- */
+.timer-box {
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  color: var(--gold);
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-family: 'Courier New', monospace;
+  font-weight: 900;
+  font-size: 1.1rem;
+  border: 1px solid var(--gold);
+  min-width: 160px;
+  text-align: center;
+  direction: ltr;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.timer-box.pending {
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  white-space: normal;
+  direction: rtl;
+}
+
+.timer-box.started {
+  color: #fca5a5;
+  letter-spacing: 1px;
+  animation: startedPulse 2s ease-in-out infinite;
+}
+
+@keyframes startedPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(252, 165, 165, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(252, 165, 165, 0.15);
+  }
+}
+
+/* --------- جسم الكارت --------- */
+.card-body {
+  padding: 30px;
+  font-size: 1.2rem;
+}
+
+.eng {
+  direction: ltr;
+  text-align: left;
+  font-family: 'Cairo', sans-serif;
+}
+
+/* --------- صف السؤال --------- */
+.q-row {
+  background: rgba(255, 255, 255, 0.7);
+  padding: 18px;
+  border-radius: 15px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  align-items: center;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.q-row:hover {
+  background: #1e293b;
+  color: white !important;
+  transform: scale(1.02) translateX(-8px);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
+}
+
+.eng .q-row:hover {
+  transform: scale(1.02) translateX(8px);
+}
+
+.q-num {
+  width: 35px;
+  height: 35px;
+  background: var(--gold);
+  color: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  flex-shrink: 0;
+  transition: 0.3s;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.95rem;
+}
+
+.q-row:hover .q-num {
+  background: white;
+  color: #1e293b;
+}
+
+/* --------- زرار الكتاب --------- */
+.telegram-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 25px;
+  padding: 12px 25px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: var(--gold) !important;
+  text-decoration: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-family: 'Cairo', sans-serif;
+  font-size: 1rem;
+  border: 1px solid var(--gold);
+  transition: all 0.3s ease;
+}
+
+.telegram-btn:hover {
+  background: var(--gold);
+  color: #1e293b !important;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(197, 160, 89, 0.4);
+}
+
+/* --------- العناوين الداخلية --------- */
+.section-tag {
+  display: block;
+  margin: 30px 0 15px;
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 1.4rem;
+  border-right: 5px solid var(--gold);
+  padding-right: 15px;
+  line-height: 1.6;
+}
+
+.section-tag:first-child {
+  margin-top: 0;
+}
+
+.eng .section-tag {
+  border-right: none;
+  border-left: 5px solid var(--gold);
+  padding-right: 0;
+  padding-left: 15px;
+}
+
+.section-tag small {
+  font-size: 0.9rem;
+  color: #b71c1c;
+  margin-right: 10px;
+  font-weight: 400;
+}
+
+/* --------- شارة شكل الامتحان والمقرر --------- */
+.important-badge {
+  background: #fff3cd;
+  color: #856404;
+  padding: 15px;
+  border-radius: 8px;
+  border-right: 4px solid #ffeeba;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  line-height: 2;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.eng .important-badge {
+  border-right: none;
+  border-left: 4px solid #ffeeba;
+}
+
+.badge-line + .badge-line {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(133, 100, 4, 0.25);
+}
+
+.badge-label {
+  color: #856404;
+  font-weight: 700;
+}
+
+/* --------- بوكس الملغي --------- */
+.cancel-badge {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border-right: 4px solid #fca5a5;
+  margin-bottom: 20px;
+  font-size: 1.05rem;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.eng .cancel-badge {
+  border-right: none;
+  border-left: 4px solid #fca5a5;
+}
+
+/* --------- نص "وصلنا لحد فين" --------- */
+.progress-text {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  line-height: 2;
+  color: #334155;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+  background: rgba(15, 23, 42, 0.035);
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px dashed rgba(15, 23, 42, 0.12);
+}
+
+.info-text {
+  margin-bottom: 15px;
+  display: block;
+  color: #475569;
+}
+
+/* --------- الفوتر --------- */
+.site-footer {
+  text-align: center;
+  padding: 10px 20px 50px;
+  color: #94a3b8;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.75rem;
+}
+
+.site-footer .dot {
+  color: var(--gold);
+  margin: 0 6px;
+}
+
+/* --------- الموبايل --------- */
+@media (max-width: 640px) {
+  header {
+    padding: 45px 16px 65px;
+  }
+
+  .container {
+    margin: 25px auto;
+    padding: 0 12px;
+  }
+
+  .subject-card {
+    margin-bottom: 32px;
+    border-radius: 16px;
+  }
+
+  .card-header {
+    padding: 18px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .subject-heading {
+    align-items: flex-start;
+  }
+
+  .subject-name {
+    font-size: 1.35rem;
+  }
+
+  .timer-box {
+    width: 100%;
+    min-width: 0;
+    font-size: 1rem;
+    padding: 10px 12px;
+  }
+
+  .card-body {
+    padding: 18px;
+    font-size: 1.05rem;
+  }
+
+  .q-row {
+    padding: 14px;
+    gap: 10px;
+    font-size: 1rem;
+    border-radius: 12px;
+  }
+
+  .q-num {
+    width: 30px;
+    height: 30px;
+    font-size: 0.85rem;
+  }
+
+  .section-tag {
+    font-size: 1.2rem;
+    margin: 24px 0 12px;
+  }
+
+  .important-badge,
+  .cancel-badge {
+    font-size: 1rem;
+    padding: 12px;
+  }
+
+  .progress-text {
+    font-size: 1.02rem;
+    padding: 12px;
+  }
+
+  .telegram-btn {
+    width: 100%;
+    margin-top: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-legal,
+  .timer-box.started {
+    animation: none;
+  }
+
+  .q-row,
+  .telegram-btn {
+    transition: none;
+  }
+}
