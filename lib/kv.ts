@@ -100,7 +100,6 @@ async function readBlobEntry(
   const typed = entry as BlobEntry;
   if (typed.expiresAt !== null && typed.expiresAt <= Date.now()) {
     await deleteBlob(pathname, {
-      access: 'private',
       ifMatch: result.blob.etag,
     });
     return null;
@@ -217,7 +216,6 @@ export async function kvDel(key: string): Promise<void> {
     const record = await readBlobEntry(key);
     if (record) {
       await deleteBlob(blobPath(key), {
-        access: 'private',
         ifMatch: record.etag,
       });
     }
