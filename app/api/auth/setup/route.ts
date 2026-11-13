@@ -41,7 +41,15 @@ export async function POST(request: NextRequest) {
 
   const passwordHash = await hashPassword(password);
   const now = new Date().toISOString();
-  await setAuth({ passwordHash, createdAt: now, updatedAt: now });
+  try {
+    await setAuth({ passwordHash, createdAt: now, updatedAt: now });
+  } catch (error) {
+    console.error('Admin password setup could not be persisted', error);
+    return NextResponse.json(
+      { error: 'تعذّر حفظ كلمة المرور في التخزين الدائم. تأكد من اتصال التخزين ثم حاول مرة أخرى.' },
+      { status: 503 },
+    );
+  }
 
   const response = NextResponse.json({ ok: true });
   response.cookies.set({
