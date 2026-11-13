@@ -44,16 +44,58 @@ function Countdown({ examAtIso, now }: { examAtIso: string; now: number | null }
   );
 }
 
+function numberedPoints(value: string): string[] {
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) =>
+      line
+        .replace(/^(?:[-*•▪◦‣]+)\s*/, '')
+        .replace(/^(?:\d+|[٠-٩۰-۹]+)\s*[.)、:-]\s*/u, '')
+        .trim(),
+    )
+    .filter(Boolean);
+}
+
+function NumberedTextBox({
+  text,
+  variant,
+}: {
+  text: string;
+  variant: 'curriculum' | 'progress';
+}) {
+  const points = numberedPoints(text);
+
+  return (
+    <div className={`numbered-box ${variant}-box`} role="list">
+      {points.map((point, index) => (
+        <div className="q-row" role="listitem" key={`${index}-${point}`}>
+          <span className="q-num" aria-hidden="true">
+            {index + 1}
+          </span>
+          <div>{point}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function SubjectCard({ subject }: { subject: PublicSubject }) {
   const now = useNow(1000);
   const target = subject.examAtIso ? new Date(subject.examAtIso).getTime() : null;
   const finished = target !== null && now !== null && target - now <= 0;
 
-  const hasBadge = Boolean(subject.examFormat || subject.curriculum);
+  const hasExamFormat = Boolean(subject.examFormat.trim());
+  const hasCurriculum = Boolean(subject.curriculum.trim());
   const hasProgress = Boolean(subject.progress.trim());
   const groups = subject.groups.filter((group) => group.items.length > 0);
   const hasContent =
-    hasBadge || hasProgress || Boolean(subject.cancelled.trim()) || groups.length > 0;
+    hasExamFormat ||
+    hasCurriculum ||
+    hasProgress ||
+    Boolean(subject.cancelled.trim()) ||
+    groups.length > 0;
 
   return (
     <article className="subject-card" data-aos="fade-up" id={subject.id}>
@@ -82,19 +124,19 @@ export default function SubjectCard({ subject }: { subject: PublicSubject }) {
 
       {hasContent && (
         <div className="card-body">
-          {hasBadge && (
+          {hasExamFormat && (
             <div className="important-badge">
-              {subject.examFormat && (
-                <div className="badge-line">
-                  <span className="badge-label">شكل الامتحان:</span> {subject.examFormat}
-                </div>
-              )}
-              {subject.curriculum && (
-                <div className="badge-line">
-                  <span className="badge-label">المقرر:</span> {subject.curriculum}
-                </div>
-              )}
+              <div className="badge-line">
+                <span className="badge-label">شكل الامتحان:</span> {subject.examFormat}
+              </div>
             </div>
+          )}
+
+          {hasCurriculum && (
+            <>
+              <span className="section-tag">المقرر</span>
+              <NumberedTextBox text={subject.curriculum} variant="curriculum" />
+            </>
           )}
 
           {subject.cancelled.trim() && (
@@ -106,7 +148,7 @@ export default function SubjectCard({ subject }: { subject: PublicSubject }) {
           {hasProgress && (
             <>
               <span className="section-tag">وصلنا لحد فين</span>
-              <p className="progress-text">{subject.progress}</p>
+              <NumberedTextBox text={subject.progress} variant="progress" />
             </>
           )}
 
