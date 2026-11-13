@@ -419,7 +419,7 @@ export default function AdminDashboard({
                   <textarea
                     rows={2}
                     value={subject.curriculum}
-                    placeholder="مثال: من بداية الكتاب لحد صفحة 261"
+                    placeholder="اكتب كل نقطة في سطر مستقل؛ هتظهر مرقّمة تلقائيًا"
                     onChange={(event) => {
                       const value = event.target.value;
                       updateSubject(subject.id, (current) => ({ ...current, curriculum: value }));
@@ -434,13 +434,13 @@ export default function AdminDashboard({
                   <textarea
                     rows={2}
                     value={subject.progress}
-                    placeholder="سيبه فاضي وهو مش هيظهر في الموقع"
+                    placeholder="اكتب كل نقطة في سطر مستقل؛ هتظهر مرقّمة تلقائيًا"
                     onChange={(event) => {
                       const value = event.target.value;
                       updateSubject(subject.id, (current) => ({ ...current, progress: value }));
                     }}
                   />
-                  <span className="hint">لو فاضي: القسم مخفي تماماً في الصفحة العامة.</span>
+                  <span className="hint">كل سطر هيظهر كنقطة مرقّمة في الصفحة العامة. لو فاضي: القسم مخفي.</span>
                 </div>
                 <div className="field">
                   <label>الملغي (اختياري)</label>
