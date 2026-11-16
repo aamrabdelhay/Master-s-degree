@@ -6,13 +6,14 @@ import type { PublicSubject } from '@/lib/types';
 type PreferenceMode = 'all' | 'selected';
 type NavigatorWithStandalone = Navigator & { standalone?: boolean };
 
-function decodeApplicationServerKey(value: string): Uint8Array {
+function decodeApplicationServerKey(value: string): ArrayBuffer {
   const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
   const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
   const binary = window.atob(padded);
-  const key = new Uint8Array(binary.length);
+  const buffer = new ArrayBuffer(binary.length);
+  const key = new Uint8Array(buffer);
   for (let index = 0; index < binary.length; index += 1) key[index] = binary.charCodeAt(index);
-  return key;
+  return buffer;
 }
 function apiError(value: unknown, fallback: string): string {
   if (typeof value === 'object' && value !== null &&
