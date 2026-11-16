@@ -36,7 +36,7 @@ export const DEFAULT_EXECUTION_GROUPS: QuestionGroup[] = [
       text,
     })),
   },
-];;
+];
 
 const DEFAULT_SUBJECT_NAMES = [
   'التنفيذ الجبري',

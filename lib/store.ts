@@ -85,18 +85,18 @@ function mergeExecutionTopicGroups(site: SiteData): SiteData {
     const destinationIndex = primaryIndex >= 0 ? primaryIndex : 0;
     if (destinationIndex === legacyIndex) return entry;
 
-    const legacyItems = entry.groups[legacyIndex].items;
-    return entry.groups
-      .filter((_, index) => index !== legacyIndex)
-      .map((group, index) =>
-        index === destinationIndex
-          ? { ...group, items: [...group.items, ...legacyItems] }
+    const legacyGroup = entry.groups[legacyIndex];
+    const destinationGroup = entry.groups[destinationIndex];
+    if (!destinationGroup || destinationGroup.id === legacyGroup.id) return entry;
+
+    const groups = entry.groups
+      .filter((group) => group.id !== legacyGroup.id)
+      .map((group) =>
+        group.id === destinationGroup.id
+          ? { ...group, items: [...group.items, ...legacyGroup.items] }
           : group,
-      )
-      .reduce((next, group, index) => {
-        next[index] = group;
-        return next;
-      }, [] as typeof entry.groups);
+      );
+    return { ...entry, groups };
   });
 
   return {
