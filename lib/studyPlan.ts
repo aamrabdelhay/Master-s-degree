@@ -148,8 +148,11 @@ export function buildStudyPlan(
   for (let date = today; date < lastExamDate; date = addPlanDays(date, 1)) {
     if (examDates.has(date) || finalReviewDates.has(date)) continue;
     const weekday = dayOfWeek(date);
-    if (restDays.has(weekday)) continue;
-    if (weekday === 5 && !options.includeFriday) continue;
+    if (weekday === 5) {
+      if (!options.includeFriday) continue;
+    } else if (restDays.has(weekday)) {
+      continue;
+    }
     regularDates.push(date);
   }
 

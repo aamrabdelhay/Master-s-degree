@@ -14,7 +14,7 @@ const WEEK_DAYS = [
   { value: 4, label: 'الخميس' }, { value: 5, label: 'الجمعة' },
   { value: 6, label: 'السبت' },
 ];
-const DEFAULT_OPTIONS: StudyPlanOptions = { restDays: [5], includeFriday: false };
+const DEFAULT_OPTIONS: StudyPlanOptions = { restDays: [], includeFriday: false };
 
 function readOptions(): StudyPlanOptions {
   try {

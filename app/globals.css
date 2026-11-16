@@ -523,3 +523,389 @@ header {
     transition: none;
   }
 }
+
+
+/* --------- أدوات الطالب: التقدم وجدول المذاكرة --------- */
+.student-dashboard {
+  margin-top: 34px;
+}
+
+.total-progress-panel,
+.study-plan-panel,
+.push-panel {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(197, 160, 89, 0.42);
+  border-radius: 18px;
+  padding: 22px;
+  margin-bottom: 28px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+}
+
+.total-progress-heading,
+.card-progress-meta,
+.study-plan-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.total-progress-heading h2,
+.study-plan-heading h2,
+.push-panel h2 {
+  color: var(--primary);
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.total-progress-heading p,
+.study-plan-heading p {
+  color: #64748b;
+  margin: 5px 0 0;
+  font-size: 0.9rem;
+}
+
+.total-progress-heading > strong {
+  color: var(--gold);
+  font-family: 'Cairo', sans-serif;
+  font-size: 1.5rem;
+}
+
+.total-progress-track,
+.progress-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #e2e8f0;
+  margin-top: 14px;
+}
+
+.total-progress-track span,
+.progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0f172a, #c5a059);
+  transition: width 0.25s ease;
+}
+
+.progress-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 15px;
+}
+
+.progress-tools button,
+.reset-progress-button,
+.study-plan-options button,
+.push-panel button,
+.push-actions button {
+  border: 1px solid var(--gold);
+  background: #0f172a;
+  color: var(--gold);
+  border-radius: 9px;
+  padding: 8px 13px;
+  font-family: 'Cairo', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.progress-tools button:hover,
+.reset-progress-button:hover,
+.push-panel button:hover {
+  background: #1e293b;
+}
+
+.local-progress-note {
+  color: #64748b;
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+}
+
+.card-progress {
+  padding: 14px 22px;
+  background: rgba(15, 23, 42, 0.035);
+  border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+}
+
+.card-progress-meta {
+  justify-content: flex-start;
+  color: #475569;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.84rem;
+}
+
+.card-progress-meta strong {
+  color: var(--primary);
+}
+
+.card-progress-meta b {
+  margin-inline-start: auto;
+  color: var(--gold);
+}
+
+.card-progress .progress-track {
+  height: 7px;
+  margin-top: 8px;
+}
+
+.reset-progress-button {
+  margin-top: 8px;
+  padding: 4px 9px;
+  font-size: 0.72rem;
+}
+
+.progress-topic {
+  gap: 12px;
+  user-select: none;
+}
+
+.progress-topic-text {
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+}
+
+.progress-checkbox {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  margin: 0;
+  accent-color: #c5a059;
+  cursor: pointer;
+}
+
+.progress-topic:focus-within {
+  outline: 3px solid rgba(197, 160, 89, 0.55);
+  outline-offset: 2px;
+}
+
+.q-row.is-complete {
+  background: rgba(197, 160, 89, 0.13);
+}
+
+.q-row.is-complete .progress-topic-text {
+  text-decoration: line-through;
+  text-decoration-color: rgba(15, 23, 42, 0.55);
+  opacity: 0.76;
+}
+
+.q-row:hover .progress-topic-text,
+.q-row:active .progress-topic-text,
+.numbered-box .q-row:hover .progress-topic-text {
+  color: #f4d58d !important;
+}
+
+.numbered-box .q-row:hover,
+.numbered-box .q-row:active,
+.numbered-box .q-row:focus-within {
+  background: #1e293b !important;
+}
+
+.study-plan-chip {
+  border: 1px solid rgba(197, 160, 89, 0.6);
+  color: #8a672d;
+  padding: 5px 10px;
+  border-radius: 30px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.study-plan-options {
+  display: grid;
+  gap: 16px;
+  margin: 18px 0;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 12px;
+  color: #334155;
+}
+
+.study-plan-options strong {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.rest-day-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rest-day-options label,
+.include-friday-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.rest-day-options label {
+  border: 1px solid #dbe2ea;
+  background: white;
+  border-radius: 8px;
+  padding: 6px 9px;
+}
+
+.rest-day-options input,
+.include-friday-option input {
+  accent-color: var(--gold);
+  width: 17px;
+  height: 17px;
+}
+
+.today-study {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #f4d58d;
+  border: 1px solid var(--gold);
+  border-radius: 13px;
+  padding: 16px 18px;
+  display: grid;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+
+.today-study span {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.today-study strong {
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+
+.study-plan-warning {
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 14px 0;
+  line-height: 1.8;
+}
+
+.study-plan-days h3,
+.undated-subjects h3 {
+  margin: 18px 0 10px;
+  color: var(--primary);
+  font-size: 1.05rem;
+}
+
+.study-plan-day {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.75fr) 2fr;
+  gap: 13px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 9px;
+  background: #fff;
+}
+
+.study-plan-day.is-today {
+  border-color: var(--gold);
+  box-shadow: inset -3px 0 0 var(--gold);
+  background: #fffcf5;
+}
+
+.study-plan-date {
+  color: #475569;
+  font-weight: 700;
+}
+
+.study-plan-date b {
+  display: inline-block;
+  margin-inline-start: 7px;
+  color: #8a672d;
+  font-size: 0.72rem;
+}
+
+.study-plan-assignments {
+  display: grid;
+  gap: 7px;
+}
+
+.study-plan-assignment {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.study-plan-assignment strong {
+  color: var(--primary);
+}
+
+.study-plan-assignment span {
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.undated-subjects {
+  margin-top: 18px;
+  padding-top: 8px;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.undated-subjects p,
+.study-plan-empty {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.undated-subjects > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.undated-subjects > div span {
+  padding: 5px 10px;
+  border-radius: 99px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .total-progress-panel,
+  .study-plan-panel,
+  .push-panel {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .card-progress {
+    padding: 12px 16px;
+  }
+
+  .study-plan-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .study-plan-day {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .progress-topic {
+    gap: 9px;
+  }
+
+  .progress-checkbox {
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .total-progress-track span,
+  .progress-track span {
+    transition: none;
+  }
+}
