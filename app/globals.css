@@ -909,3 +909,27 @@ header {
     transition: none;
   }
 }
+
+
+/* --------- Web Push --------- */
+.push-panel { margin-top: 0; }
+.push-preferences, .push-subject-options, .push-actions {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 15px;
+}
+.push-preferences label, .push-subject-options label {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer; color: #334155;
+}
+.push-preferences input, .push-subject-options input {
+  width: 18px; height: 18px; accent-color: var(--gold);
+}
+.push-subject-options { padding: 13px; background: #f8fafc; border-radius: 10px; }
+.push-actions .push-disable-button {
+  color: #fecaca; border-color: #b91c1c; background: #7f1d1d;
+}
+.push-status, .push-ios-help {
+  color: #64748b; margin: 13px 0 0; font-size: 0.88rem; line-height: 1.8;
+}
+.push-ios-help {
+  padding: 13px 15px; color: #334155; background: #fffbeb;
+  border: 1px solid #fcd34d; border-radius: 10px;
+}
