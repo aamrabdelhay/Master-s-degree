@@ -115,7 +115,7 @@ export default function SubjectCard({ subject }: { subject: PublicSubject }) {
           )}
         </div>
 
-        {subject.examAtIso ? (
+        {subject.examAtIso && (
           <Countdown examAtIso={subject.examAtIso} now={now} />
         )}
       </div>
