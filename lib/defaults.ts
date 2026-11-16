@@ -1,11 +1,46 @@
-import type { SiteData, Subject } from './types';
+import type { QuestionGroup, SiteData, Subject } from './types';
 
 export const DEFAULT_BOOK_URL = 'https://t.me/+R2FwAGsyjiBhYThk';
 
 export const DEFAULT_HEADER_TITLE = 'دبلومة القانون الخاص — جامعة العاصمة';
 export const DEFAULT_HEADER_SUBTITLE = 'جدول الامتحانات النهائية';
 
-/** الترتيب الافتراضي للمواد — seed أول مرة */
+/** ترتيب الموضوعات التي تم شرحها في مادة التنفيذ/المرافعات. */
+export const DEFAULT_EXECUTION_GROUPS: QuestionGroup[] = [
+  {
+    id: 'execution-covered-topics',
+    title: 'الموضوعات التي تم شرحها',
+    items: [
+      'السلطة التقديرية لقاضي التنفيذ',
+      'التظلم من قرارات إدارة التنفيذ',
+      'خروج بعض المنازعات عن اختصاص إدارة التنفيذ',
+      'العلاقة بين الأولوية الإجرائية والموضوعية',
+      'التكييف القانوني للإيداع والتخصيص',
+      'مقارنة وقف التنفيذ من قاضي التنفيذ والنقض',
+      'التكييف القانوني للحجز التحفظي',
+      'الإشكال المعكوس والعكسي',
+      'مقارنة الاختلافات بين التنفيذ على العقار وفقًا للتمويل العقاري والقواعد العامة',
+      'تزاحم وأولويات السندات التنفيذية',
+      'دعوى رفع الحجز وعدم الاعتداد بالحجز',
+    ].map((text, index) => ({ id: `execution-topic-${index + 1}`, text })),
+  },
+  {
+    id: 'execution-timely-disputes',
+    title: 'خصومة التنفيذ الوقتية',
+    items: [
+      'الدعوى',
+      'إجراءات رفع الدعوى',
+      'الطعن',
+      'المنازعة الموضوعية',
+      'وقف التنفيذ',
+      'التحوير',
+      'احترام حق الدفاع',
+      'الشطب',
+      'الإشكال الأول × دعوى الاسترداد',
+    ].map((text, index) => ({ id: `timely-execution-topic-${index + 1}`, text })),
+  },
+];
+
 const DEFAULT_SUBJECT_NAMES = [
   'التنفيذ الجبري',
   'القانون الدولي الخاص',
@@ -30,7 +65,13 @@ export function createDefaultSubjects(): Subject[] {
     progress: '',
     cancelled: '',
     bookUrl: DEFAULT_BOOK_URL,
-    groups: [],
+    groups:
+      index === 0
+        ? DEFAULT_EXECUTION_GROUPS.map((group) => ({
+            ...group,
+            items: group.items.map((item) => ({ ...item })),
+          }))
+        : [],
   }));
 }
 
@@ -39,6 +80,7 @@ export function createDefaultSite(): SiteData {
     headerTitle: DEFAULT_HEADER_TITLE,
     headerSubtitle: DEFAULT_HEADER_SUBTITLE,
     subjects: createDefaultSubjects(),
+    migrations: [],
     updatedAt: new Date().toISOString(),
   };
 }

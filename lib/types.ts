@@ -37,6 +37,8 @@ export type SiteData = {
   headerTitle: string;
   headerSubtitle: string;
   subjects: Subject[];
+  /** معرّفات ترحيلات البيانات التي تم تطبيقها مرة واحدة */
+  migrations?: string[];
   updatedAt: string;
 };
 

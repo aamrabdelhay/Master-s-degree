@@ -97,6 +97,9 @@ export function normalizeSite(input: unknown): SiteData {
     headerTitle: str(raw.headerTitle, MAX_NAME).trim() || createDefaultSite().headerTitle,
     headerSubtitle: str(raw.headerSubtitle, MAX_NAME).trim() || createDefaultSite().headerSubtitle,
     subjects,
+    migrations: Array.isArray(raw.migrations)
+      ? raw.migrations.filter((value): value is string => typeof value === 'string').slice(0, 50)
+      : [],
     updatedAt: new Date().toISOString(),
   };
 }
