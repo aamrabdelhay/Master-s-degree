@@ -92,3 +92,12 @@ test('reports a conflict when a final-review date is another subject exam day', 
   assert.equal(result.reviewConflicts[0].reviewDate, '2026-11-19');
   assert.equal(result.insufficientDays, true);
 });
+
+
+test('respects Friday as a chosen weekly rest day even when Friday is enabled', () => {
+  const result = buildStudyPlan('2026-11-16', [
+    { id: 'exam', name: 'امتحان', examAtIso: at('2026-11-25'), remainingTopics: 2 },
+  ], { restDays: [5], includeFriday: true });
+  assert.ok(!result.days.some((day) =>
+    day.date === '2026-11-20' && day.items.some((item) => item.kind === 'study')));
+});

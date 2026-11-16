@@ -31,7 +31,18 @@ export function isSafePushEndpoint(value: unknown): value is string {
   if (typeof value !== 'string' || value.length === 0 || value.length > 2048 || /\s/.test(value)) return false;
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' && Boolean(url.hostname) && !url.username && !url.password && !url.hash;
+    const host = url.hostname.toLowerCase().replace(/\.$/, '');
+    const approvedHost =
+      host === 'fcm.googleapis.com' ||
+      host === 'web.push.apple.com' ||
+      host.endsWith('.push.apple.com') ||
+      host === 'push.services.mozilla.com' ||
+      host.endsWith('.push.services.mozilla.com') ||
+      host === 'notify.windows.com' ||
+      host.endsWith('.notify.windows.com');
+
+    return url.protocol === 'https:' && url.port === '' &&
+      approvedHost && !url.username && !url.password && !url.hash;
   } catch { return false; }
 }
 export function isPushDeliveryConfigured(): boolean {
