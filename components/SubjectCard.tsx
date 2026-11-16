@@ -106,12 +106,7 @@ export default function SubjectCard({ subject }: { subject: PublicSubject }) {
             {finished && <span className="done-chip">✓ انتهى</span>}
           </h2>
           {subject.examAtLabel && (
-            <div className="exam-date">
-              <span className="icon" aria-hidden="true">
-                📅
-              </span>
-              {subject.examAtLabel}
-            </div>
+            <div className="exam-date">{subject.examAtLabel}</div>
           )}
         </div>
 
@@ -140,7 +135,7 @@ export default function SubjectCard({ subject }: { subject: PublicSubject }) {
                 lineHeight: 1.6,
               }}
             >
-              📅 الموعد لم يُحدد بعد
+              الموعد لم يُحدد بعد
             </div>
           )}
           {hasExamFormat && (

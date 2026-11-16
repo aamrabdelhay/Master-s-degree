@@ -3,7 +3,7 @@ import type { QuestionGroup, SiteData, Subject } from './types';
 export const DEFAULT_BOOK_URL = 'https://t.me/+R2FwAGsyjiBhYThk';
 
 export const DEFAULT_HEADER_TITLE = 'دبلومة القانون الخاص — جامعة العاصمة';
-export const DEFAULT_HEADER_SUBTITLE = 'جدول الامتحانات النهائية';
+export const DEFAULT_HEADER_SUBTITLE = '';
 
 /** ترتيب الموضوعات التي تم شرحها في مادة التنفيذ/المرافعات. */
 export const DEFAULT_EXECUTION_GROUPS: QuestionGroup[] = [
@@ -22,12 +22,6 @@ export const DEFAULT_EXECUTION_GROUPS: QuestionGroup[] = [
       'مقارنة الاختلافات بين التنفيذ على العقار وفقًا للتمويل العقاري والقواعد العامة',
       'تزاحم وأولويات السندات التنفيذية',
       'دعوى رفع الحجز وعدم الاعتداد بالحجز',
-    ].map((text, index) => ({ id: `execution-topic-${index + 1}`, text })),
-  },
-  {
-    id: 'execution-timely-disputes',
-    title: 'خصومة التنفيذ الوقتية',
-    items: [
       'الدعوى',
       'إجراءات رفع الدعوى',
       'الطعن',
@@ -37,9 +31,12 @@ export const DEFAULT_EXECUTION_GROUPS: QuestionGroup[] = [
       'احترام حق الدفاع',
       'الشطب',
       'الإشكال الأول × دعوى الاسترداد',
-    ].map((text, index) => ({ id: `timely-execution-topic-${index + 1}`, text })),
+    ].map((text, index) => ({
+      id: index < 11 ? `execution-topic-${index + 1}` : `timely-execution-topic-${index - 10}`,
+      text,
+    })),
   },
-];
+];;
 
 const DEFAULT_SUBJECT_NAMES = [
   'التنفيذ الجبري',

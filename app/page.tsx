@@ -25,9 +25,6 @@ export default async function HomePage() {
         <div className={`main-title${isLatin(site.headerTitle) ? ' latin' : ''}`}>
           {site.headerTitle}
         </div>
-        <div className={`sub-title${isLatin(site.headerSubtitle) ? ' latin' : ''}`}>
-          {site.headerSubtitle}
-        </div>
       </header>
 
       <main className="container">

@@ -249,11 +249,19 @@ header {
   white-space: pre-line;
 }
 
-.q-row:hover {
-  background: #1e293b;
-  color: white !important;
+.q-row:hover,
+.q-row:active,
+.q-row:focus-visible {
+  background: #1e293b !important;
+  color: #f4d58d !important;
   transform: scale(1.02) translateX(-8px);
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
+}
+
+.q-row:hover > div:not(.q-num),
+.q-row:active > div:not(.q-num),
+.q-row:focus-visible > div:not(.q-num) {
+  color: #f4d58d !important;
 }
 
 .eng .q-row:hover {
@@ -276,9 +284,11 @@ header {
   font-size: 0.95rem;
 }
 
-.q-row:hover .q-num {
-  background: white;
-  color: #1e293b;
+.q-row:hover .q-num,
+.q-row:active .q-num,
+.q-row:focus-visible .q-num {
+  background: var(--gold);
+  color: #0f172a;
 }
 
 /* --------- زرار الكتاب --------- */

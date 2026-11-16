@@ -55,6 +55,58 @@ function migrateExecutionTopics(site: SiteData): SiteData {
   };
 }
 
+const EXECUTION_GROUPS_MERGED_MIGRATION = 'execution-topics-groups-merged-v2';
+
+/** دمج العناصر القديمة في قائمة واحدة وإزالة عنوان "خصومة التنفيذ الوقتية" مرة واحدة. */
+function mergeExecutionTopicGroups(site: SiteData): SiteData {
+  const migrations = site.migrations ?? [];
+  if (migrations.includes(EXECUTION_GROUPS_MERGED_MIGRATION)) return site;
+
+  const subject = site.subjects.find(
+    (entry) => entry.name.includes('مرافعات') || entry.name.includes('التنفيذ الجبري'),
+  );
+  if (!subject) return site;
+
+  const subjects = site.subjects.map((entry) => {
+    if (entry.id !== subject.id) return entry;
+
+    const legacyIndex = entry.groups.findIndex(
+      (group) =>
+        group.id === 'execution-timely-disputes' ||
+        group.title.trim() === 'خصومة التنفيذ الوقتية',
+    );
+    if (legacyIndex < 0) return entry;
+
+    const primaryIndex = entry.groups.findIndex(
+      (group) =>
+        group.id === 'execution-covered-topics' ||
+        group.title.trim() === 'الموضوعات التي تم شرحها',
+    );
+    const destinationIndex = primaryIndex >= 0 ? primaryIndex : 0;
+    if (destinationIndex === legacyIndex) return entry;
+
+    const legacyItems = entry.groups[legacyIndex].items;
+    return entry.groups
+      .filter((_, index) => index !== legacyIndex)
+      .map((group, index) =>
+        index === destinationIndex
+          ? { ...group, items: [...group.items, ...legacyItems] }
+          : group,
+      )
+      .reduce((next, group, index) => {
+        next[index] = group;
+        return next;
+      }, [] as typeof entry.groups);
+  });
+
+  return {
+    ...site,
+    subjects,
+    migrations: [...migrations, EXECUTION_GROUPS_MERGED_MIGRATION],
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export type AuthRecord = {
   passwordHash: string;
   createdAt: string;
@@ -75,7 +127,8 @@ export async function getSite(): Promise<SiteData> {
         ? ((stored as Record<string, unknown>).updatedAt as string)
         : normalized.updatedAt;
     const site = { ...normalized, updatedAt: rawUpdatedAt };
-    const migrated = migrateExecutionTopics(site);
+    const executionMigrated = migrateExecutionTopics(site);
+    const migrated = mergeExecutionTopicGroups(executionMigrated);
     if (migrated !== site) {
       // ترحيل آمن لمرة واحدة: إذا تعذر الحفظ نعرض البيانات المهاجرة مؤقتًا ولا نكسر الصفحة.
       try {

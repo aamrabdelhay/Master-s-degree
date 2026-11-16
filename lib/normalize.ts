@@ -22,6 +22,12 @@ function str(value: unknown, max: number): string {
   return cleaned.slice(0, max);
 }
 
+function text(value: unknown, max: number): string {
+  return str(value, max)
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0));
+}
+
 function id(value: unknown, prefix: string): string {
   const raw = typeof value === 'string' ? value.trim() : '';
   if (raw && /^[a-zA-Z0-9-_]{1,64}$/.test(raw)) return raw;
@@ -39,7 +45,7 @@ function normalizeItem(input: unknown, index: number): QuestionItem {
   const raw = (input ?? {}) as Record<string, unknown>;
   return {
     id: id(raw.id, `q${index}`),
-    text: str(raw.text, MAX_TEXT).trim(),
+    text: text(raw.text, MAX_TEXT).trim(),
   };
 }
 
@@ -48,7 +54,7 @@ function normalizeGroup(input: unknown, index: number): QuestionGroup {
   const itemsInput = Array.isArray(raw.items) ? raw.items : [];
   return {
     id: id(raw.id, `g${index}`),
-    title: str(raw.title, MAX_NAME).trim(),
+    title: text(raw.title, MAX_NAME).trim(),
     items: itemsInput.slice(0, MAX_ITEMS).map(normalizeItem),
   };
 }
@@ -61,12 +67,12 @@ function normalizeSubject(input: unknown, index: number): Subject {
 
   return {
     id: id(raw.id, `sub${index}`),
-    name: str(raw.name, MAX_NAME).trim(),
+    name: text(raw.name, MAX_NAME).trim(),
     examAt: isValidCairoWallTime(examAtRaw) ? examAtRaw : null,
-    examFormat: str(raw.examFormat, MAX_LONG_TEXT).trim(),
-    curriculum: str(raw.curriculum, MAX_LONG_TEXT).trim(),
-    progress: str(raw.progress, MAX_LONG_TEXT).trim(),
-    cancelled: str(raw.cancelled, MAX_LONG_TEXT).trim(),
+    examFormat: text(raw.examFormat, MAX_LONG_TEXT).trim(),
+    curriculum: text(raw.curriculum, MAX_LONG_TEXT).trim(),
+    progress: text(raw.progress, MAX_LONG_TEXT).trim(),
+    cancelled: text(raw.cancelled, MAX_LONG_TEXT).trim(),
     bookUrl: bookUrl || DEFAULT_BOOK_URL,
     groups: groupsInput
       .slice(0, MAX_GROUPS)
@@ -94,8 +100,8 @@ export function normalizeSite(input: unknown): SiteData {
   }
 
   return {
-    headerTitle: str(raw.headerTitle, MAX_NAME).trim() || createDefaultSite().headerTitle,
-    headerSubtitle: str(raw.headerSubtitle, MAX_NAME).trim() || createDefaultSite().headerSubtitle,
+    headerTitle: text(raw.headerTitle, MAX_NAME).trim() || createDefaultSite().headerTitle,
+    headerSubtitle: text(raw.headerSubtitle, MAX_NAME).trim() || createDefaultSite().headerSubtitle,
     subjects,
     migrations: Array.isArray(raw.migrations)
       ? raw.migrations.filter((value): value is string => typeof value === 'string').slice(0, 50)
