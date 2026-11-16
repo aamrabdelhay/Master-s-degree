@@ -117,13 +117,32 @@ export default function SubjectCard({ subject }: { subject: PublicSubject }) {
 
         {subject.examAtIso ? (
           <Countdown examAtIso={subject.examAtIso} now={now} />
-        ) : (
-          <div className="timer-box pending">الموعد لم يُحدد بعد</div>
         )}
       </div>
 
-      {hasContent && (
+      {(hasContent || !subject.examAtIso) && (
         <div className="card-body">
+          {!subject.examAtIso && (
+            <div
+              className="pending-date-note"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                marginBottom: 14,
+                padding: '4px 10px',
+                borderRadius: 8,
+                background: 'rgba(15, 23, 42, 0.045)',
+                color: '#64748b',
+                fontFamily: 'Cairo, sans-serif',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                lineHeight: 1.6,
+              }}
+            >
+              📅 الموعد لم يُحدد بعد
+            </div>
+          )}
           {hasExamFormat && (
             <div className="important-badge">
               <div className="badge-line">
@@ -167,15 +186,25 @@ export default function SubjectCard({ subject }: { subject: PublicSubject }) {
       )}
 
       {subject.bookUrl && (
-        <div className="card-body" style={{ paddingTop: hasContent ? 0 : 24 }}>
-          <a
-            className="telegram-btn"
-            href={subject.bookUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            📖 الكتاب
-          </a>
+        <div className="card-body" style={{ paddingTop: hasContent ? 0 : 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <a
+              className="telegram-btn"
+              href={subject.bookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                width: 'auto',
+                padding: '7px 15px',
+                marginTop: 8,
+                gap: 7,
+                fontSize: '0.88rem',
+                borderRadius: 9,
+              }}
+            >
+              📖 الكتاب
+            </a>
+          </div>
         </div>
       )}
     </article>
