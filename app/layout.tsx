@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import AOSInit from '@/components/AOSInit';
+import PWARegister from '@/components/PWARegister';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -7,6 +8,19 @@ export const metadata: Metadata = {
   description:
     'جدول الامتحانات النهائية لدبلومة القانون الخاص بجامعة العاصمة — المواعيد، شكل الامتحان، المقرر، الأسئلة المحددة، والملغي.',
   applicationName: 'دبلومة القانون الخاص — جامعة العاصمة',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'دبلومة القانون',
+  },
+  icons: {
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
   robots: { index: true, follow: true },
   openGraph: {
     title: 'دبلومة القانون الخاص — جامعة العاصمة',
@@ -35,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {children}
+        <PWARegister />
         <AOSInit />
       </body>
     </html>
