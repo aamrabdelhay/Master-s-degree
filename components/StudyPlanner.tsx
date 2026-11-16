@@ -137,10 +137,18 @@ export default function StudyPlanner({
 
           {plan.insufficientDays && (
             <div className="study-plan-warning" role="status">
-              الأيام المتاحة أقل من عدد الموضوعات المتبقية أو فيه مادة موعدها قريب ومش واخدة أيام كفاية.
+              فيه ضغط في الأيام المتاحة أو تعارض بين يوم مراجعة نهائية وامتحان مادة تانية.
               المتبقي {plan.totalRemainingTopics} موضوع، وأيام المذاكرة المتاحة {plan.availableStudyDays}.
               {plan.unscheduledSubjects.length > 0 && (
                 <span> مواد محتاجة أولوية: {plan.unscheduledSubjects.map((item) => item.name).join('، ')}.</span>
+              )}
+              {plan.reviewConflicts.length > 0 && (
+                <span>
+                  تعارض مراجعة نهائية: {plan.reviewConflicts.map((item) =>
+                    item.subjectName + ' يوم ' + formatPlanDate(item.reviewDate) +
+                    ' مع امتحان ' + item.conflictsWith.map((entry) => entry.name).join('، ')
+                  ).join('؛ ')}.
+                </span>
               )}
             </div>
           )}

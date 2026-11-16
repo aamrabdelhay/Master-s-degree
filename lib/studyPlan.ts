@@ -33,6 +33,12 @@ export type StudyPlanResult = {
   scheduledStudyDays: number;
   insufficientDays: boolean;
   unscheduledSubjects: { id: string; name: string; remainingTopics: number }[];
+  reviewConflicts: {
+    subjectId: string;
+    subjectName: string;
+    reviewDate: string;
+    conflictsWith: { id: string; name: string }[];
+  }[];
 };
 
 const DAY_MS = 86_400_000;
@@ -100,20 +106,28 @@ export function buildStudyPlan(
     .filter((subject) => !subject.examAtIso)
     .map(({ id, name }) => ({ id, name }));
 
-  const examToday: { id: string; name: string }[] = [];
-  const datedSubjects = subjects.flatMap((subject, index) => {
+  const examEntries = subjects.flatMap((subject) => {
     if (!subject.examAtIso) return [];
     const examDate = examDayKey(subject.examAtIso);
-    if (!examDate) return [];
-    if (examDate === today) examToday.push({ id: subject.id, name: subject.name });
-    if (dateKeyToUtc(examDate) <= todayTimestamp) return [];
-    return [{
+    return examDate ? [{ ...subject, examDate }] : [];
+  });
+  const examDateSubjects = new Map<string, { id: string; name: string }[]>();
+  for (const subject of examEntries) {
+    const current = examDateSubjects.get(subject.examDate) || [];
+    current.push({ id: subject.id, name: subject.name });
+    examDateSubjects.set(subject.examDate, current);
+  }
+  const examDates = new Set(examDateSubjects.keys());
+  const examToday = examEntries
+    .filter((subject) => subject.examDate === today)
+    .map(({ id, name }) => ({ id, name }));
+  const datedSubjects = examEntries
+    .filter((subject) => dateKeyToUtc(subject.examDate) > todayTimestamp)
+    .map((subject, index) => ({
       ...subject,
       index,
-      examDate,
       remainingTopics: Math.max(0, Math.floor(subject.remainingTopics)),
-    }];
-  });
+    }));
 
   const totalRemainingTopics = datedSubjects.reduce(
     (sum, subject) => sum + subject.remainingTopics, 0,
@@ -122,7 +136,7 @@ export function buildStudyPlan(
     return {
       days: [], undatedSubjects, examToday, totalRemainingTopics,
       availableStudyDays: 0, scheduledStudyDays: 0,
-      insufficientDays: false, unscheduledSubjects: [],
+      insufficientDays: false, unscheduledSubjects: [], reviewConflicts: [],
     };
   }
 
@@ -131,11 +145,20 @@ export function buildStudyPlan(
     datedSubjects[0].examDate,
   );
 
-  const examDates = new Set(datedSubjects.map((subject) => subject.examDate));
   const finalReviewDates = new Map<string, typeof datedSubjects>();
+  const reviewConflicts: StudyPlanResult['reviewConflicts'] = [];
   for (const subject of datedSubjects) {
     const reviewDate = addPlanDays(subject.examDate, -1);
-    if (reviewDate < today || examDates.has(reviewDate)) continue;
+    if (reviewDate < today) continue;
+    if (examDates.has(reviewDate)) {
+      reviewConflicts.push({
+        subjectId: subject.id,
+        subjectName: subject.name,
+        reviewDate,
+        conflictsWith: examDateSubjects.get(reviewDate) || [],
+      });
+      continue;
+    }
     const current = finalReviewDates.get(reviewDate) || [];
     current.push(subject);
     finalReviewDates.set(reviewDate, current);
@@ -235,7 +258,11 @@ export function buildStudyPlan(
     days, undatedSubjects, examToday, totalRemainingTopics,
     availableStudyDays: regularDates.length,
     scheduledStudyDays,
-    insufficientDays: totalRemainingTopics > scheduledStudyDays || unscheduledSubjects.length > 0,
+    insufficientDays:
+      totalRemainingTopics > scheduledStudyDays ||
+      unscheduledSubjects.length > 0 ||
+      reviewConflicts.length > 0,
     unscheduledSubjects,
+    reviewConflicts,
   };
 }

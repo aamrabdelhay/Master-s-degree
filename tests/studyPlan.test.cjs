@@ -71,3 +71,24 @@ test('reports insufficient study days when remaining topics exceed assigned days
   ], noRest);
   assert.equal(result.insufficientDays, true);
 });
+
+
+test('excludes a subject exam happening today from all study slots', () => {
+  const result = buildStudyPlan('2026-11-16', [
+    { id: 'today', name: 'امتحان اليوم', examAtIso: at('2026-11-16'), remainingTopics: 2 },
+    { id: 'later', name: 'امتحان لاحق', examAtIso: at('2026-11-19'), remainingTopics: 2 },
+  ], noRest);
+  assert.deepEqual(result.examToday, [{ id: 'today', name: 'امتحان اليوم' }]);
+  assert.ok(!result.days.some((day) => day.date === '2026-11-16'));
+});
+
+test('reports a conflict when a final-review date is another subject exam day', () => {
+  const result = buildStudyPlan('2026-11-16', [
+    { id: 'first', name: 'امتحان أول', examAtIso: at('2026-11-19'), remainingTopics: 1 },
+    { id: 'second', name: 'امتحان تاني', examAtIso: at('2026-11-20'), remainingTopics: 2 },
+  ], noRest);
+  assert.equal(result.reviewConflicts.length, 1);
+  assert.equal(result.reviewConflicts[0].subjectId, 'second');
+  assert.equal(result.reviewConflicts[0].reviewDate, '2026-11-19');
+  assert.equal(result.insufficientDays, true);
+});
