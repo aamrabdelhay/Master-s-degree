@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import type { PublicSubject } from '@/lib/types';
-import SubjectCard from './SubjectCard';
+import SubjectCard from './ProgressSubjectCard';
 import StudyPlanner from './StudyPlanner';
 import PushNotifications from './PushNotifications';
 import {
