@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feat/student-study-tools
+      - feat/study-mood-footer-manual-push
   pull_request:
     branches:
       - main
