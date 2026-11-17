@@ -352,7 +352,7 @@ export default function AdminDashboard({
           </h2>
           <div className="pwa-icon-controls">
             {site.pwaIconUrl ? (
-              <img className="pwa-icon-preview" src={site.pwaIconUrl} alt="معاينة أيقونة التطبيق" />
+              <img className="pwa-icon-preview" src="/api/site-icon-image" alt="معاينة أيقونة التطبيق" />
             ) : (
               <div className="pwa-icon-preview pwa-icon-placeholder">الأيقونة الافتراضية</div>
             )}
