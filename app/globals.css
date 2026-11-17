@@ -931,12 +931,8 @@ header {
 .push-actions .push-disable-button {
   color: #fecaca; border-color: #b91c1c; background: #7f1d1d;
 }
-.push-status, .push-ios-help {
+ .push-status {
   color: #64748b; margin: 13px 0 0; font-size: 0.88rem; line-height: 1.8;
-}
-.push-ios-help {
-  padding: 13px 15px; color: #334155; background: #fffbeb;
-  border: 1px solid #fcd34d; border-radius: 10px;
 }
 
 
