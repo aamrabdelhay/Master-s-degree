@@ -1,13 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { del as deleteBlobs, get as getBlob, list as listBlobs, put as putBlob } from '@vercel/blob';
 import { sendNotification, setVapidDetails, type PushSubscription as WebPushSubscription } from 'web-push';
-import { kvDel, kvGetJson, kvIncr, kvSetJson } from './kv';
+import { kvDel, kvGetJson, kvSetJson } from './kv';
 
 export const PUSH_SUBSCRIPTIONS_KEY = 'lawdiploma:push:v1';
 export const MAX_PUSH_SUBSCRIPTIONS = 500;
 const PUSH_BLOB_PREFIX = 'lawdiploma-push/subscriptions/';
-const SENT_MARKER_PREFIX = 'lawdiploma:push:sent:';
-const SENT_MARKER_TTL_SECONDS = 45 * 24 * 60 * 60;
 
 export type StoredPushSubscription = {
   endpoint: string;
@@ -276,17 +274,6 @@ export async function removePushSubscriptions(endpoints: string[]): Promise<numb
 }
 export async function removePushSubscription(endpoint: string): Promise<boolean> {
   return (await removePushSubscriptions([endpoint])) > 0;
-}
-export function reminderLedgerKey(endpoint: string, subjectId: string, examAtIso: string, kind: '24h' | '1h'): string {
-  return [endpoint, subjectId, examAtIso, kind].join('|');
-}
-export async function claimPushReminder(key: string): Promise<boolean> {
-  const hash = createHash('sha256').update(key).digest('hex');
-  return (await kvIncr(SENT_MARKER_PREFIX + hash, SENT_MARKER_TTL_SECONDS)) === 1;
-}
-export async function releasePushReminderClaim(key: string): Promise<void> {
-  const hash = createHash('sha256').update(key).digest('hex');
-  await kvDel(SENT_MARKER_PREFIX + hash);
 }
 export async function deliverPush(subscription: StoredPushSubscription, payload: PushPayload, ttlSeconds: number): Promise<void> {
   const webSubscription: WebPushSubscription = { endpoint: subscription.endpoint, keys: subscription.keys };

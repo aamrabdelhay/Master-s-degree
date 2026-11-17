@@ -67,7 +67,7 @@ export default function PushNotifications({ subjects }: { subjects: PublicSubjec
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           subscription: current.toJSON(),
-          preference: { mode, subjectIds: mode === 'selected' ? selectedIds : [] },
+          preference: { mode: 'keep', subjectIds: [] },
         }),
       });
       const result: unknown = await response.json().catch(() => ({}));
@@ -107,28 +107,17 @@ export default function PushNotifications({ subjects }: { subjects: PublicSubjec
   return (
     <section className="push-panel" aria-labelledby="push-panel-title">
       <div className="study-plan-heading"><div>
-        <h2 id="push-panel-title">تنبيهات مواعيد الامتحانات</h2>
-        <p>تنبيه قبل الامتحان بـ٢٤ ساعة، وتنبيه تاني قبلها بساعة.</p>
+        <h2 id="push-panel-title">إشعارات الموقع</h2>
+        <p>هيوصلك أي إعلان جديد من الإدارة على الجهاز ده.</p>
       </div></div>
       {!supportChecked ? <p className="push-status">بنتأكد من دعم المتصفح…</p>
         : !supported ? <p className="push-status">المتصفح ده مش بيدعم تنبيهات الويب أو الموقع مش مفتوح على اتصال آمن.</p>
         : iosNeedsHomeScreen ? <p className="push-status">تنبيهات الويب غير متاحة في وضع التصفح الحالي.</p>
         : !publicKey ? <p className="push-status">التنبيهات مش متاحة حاليًا؛ إعدادات VAPID لسه ما اتضافتش للموقع.</p>
         : <>
-          <div className="push-preferences">
-            <label><input type="radio" name="push-mode" checked={mode === 'all'} onChange={() => setMode('all')} /><span>كل المواد</span></label>
-            <label><input type="radio" name="push-mode" checked={mode === 'selected'} onChange={() => setMode('selected')} /><span>مواد محددة</span></label>
-          </div>
-          {mode === 'selected' && <div className="push-subject-options">
-            {subjects.map((subject) => <label key={subject.id}>
-              <input type="checkbox" checked={selectedIds.includes(subject.id)}
-                onChange={(event) => toggleSubject(subject.id, event.currentTarget.checked)} />
-              <span>{subject.name}</span>
-            </label>)}
-          </div>}
           <div className="push-actions">
-            <button type="button" disabled={busy || (mode === 'selected' && selectedIds.length === 0)} onClick={saveSubscription}>
-              {busy ? 'جارٍ الحفظ…' : subscription ? 'حفظ إعدادات التنبيهات' : 'فعّل التنبيهات'}
+            <button type="button" disabled={busy} onClick={saveSubscription}>
+              {busy ? 'جارٍ الحفظ…' : subscription ? 'تأكيد الاشتراك' : 'فعّل الإشعارات'}
             </button>
             {subscription && <button type="button" className="push-disable-button" disabled={busy}
               onClick={disableSubscription}>إيقاف التنبيهات</button>}
