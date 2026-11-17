@@ -15,9 +15,11 @@ self.addEventListener('push', (event) => {
       const response = await fetch('/api/site-icon', { cache: 'no-store' });
       if (response.ok) {
         const settings = await response.json();
-        if (typeof settings.pwaIconUrl === 'string' &&
-            /^https:\/\//i.test(settings.pwaIconUrl)) {
-          icon = settings.pwaIconUrl;
+        if (typeof settings.pwaIconUrl === 'string') {
+          const iconUrl = new URL(settings.pwaIconUrl, self.location.origin);
+          if (iconUrl.origin === self.location.origin) {
+            icon = iconUrl.href;
+          }
         }
       }
     } catch {
