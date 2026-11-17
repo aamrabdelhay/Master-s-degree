@@ -140,7 +140,7 @@ async function listBlobPushSubscriptions(): Promise<StoredPushSubscription[]> {
   const selected = [...latestByEndpoint.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
     .slice(0, MAX_PUSH_SUBSCRIPTIONS);
-  const latestPaths = new Set(selected.map(([, item]) => item.pathname));
+  const latestPaths = new Set([...latestByEndpoint.values()].map((item) => item.pathname));
   const stalePaths = [...recognized].filter((pathname) => !latestPaths.has(pathname));
   if (stalePaths.length > 0) {
     const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
