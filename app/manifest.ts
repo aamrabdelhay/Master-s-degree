@@ -6,7 +6,7 @@ export const revalidate = 0;
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const site = await getSite();
-  const customIcon = site.pwaIconUrl;
+  const customIcon = site.pwaIconUrl ? '/api/site-icon-image' : null;
   const contentType = site.pwaIconMime || 'image/png';
 
   return {
