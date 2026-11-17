@@ -1,4 +1,5 @@
 import SubjectCard from '@/components/SubjectCard';
+import StudyMoodLauncher from '@/components/StudyMoodLauncher';
 import { toPublicSubjects } from '@/lib/normalize';
 import { getSite } from '@/lib/store';
 
@@ -38,6 +39,7 @@ export default async function HomePage() {
           subjects.map((subject) => <SubjectCard key={subject.id} subject={subject} />)
         )}
       </main>
+      <StudyMoodLauncher />
 
     </>
   );

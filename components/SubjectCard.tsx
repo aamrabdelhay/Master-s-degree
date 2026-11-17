@@ -98,7 +98,7 @@ export default function SubjectCard({ subject }: { subject: PublicSubject }) {
     groups.length > 0;
 
   return (
-    <article className="subject-card" data-aos="fade-up" id={subject.id}>
+    <article className={"subject-card" + (finished ? " is-finished" : "")} data-aos="fade-up" id={subject.id}>
       <div className="card-header">
         <div className="subject-heading">
           <h2 className="subject-name">
@@ -110,7 +110,7 @@ export default function SubjectCard({ subject }: { subject: PublicSubject }) {
           )}
         </div>
 
-        {subject.examAtIso && (
+        {finished ? <div className="timer-box started">المادة خلصت</div> : subject.examAtIso && (
           <Countdown examAtIso={subject.examAtIso} now={now} />
         )}
       </div>

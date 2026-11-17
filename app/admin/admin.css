@@ -602,3 +602,24 @@ textarea {
     padding: 9px 14px;
   }
 }
+
+
+/* --------- إحصائيات الموقع --------- */
+.analytics-panel { margin-top: 22px; }
+.analytics-stat-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.analytics-stat { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; display:grid; gap:3px; }
+.analytics-stat span { color:#64748b; font-size:.78rem; }
+.analytics-stat strong { color:var(--primary); font:900 1.65rem 'Cairo',sans-serif; }
+.analytics-stat small { color:#94a3b8; font-size:.68rem; }
+.analytics-chart-heading { display:flex; justify-content:space-between; gap:10px; align-items:center; margin:20px 0 9px; color:#334155; font-size:.86rem; }
+.analytics-chart-heading small { color:#94a3b8; font-size:.7rem; }
+.analytics-chart { display:grid; grid-template-columns:repeat(24,minmax(24px,1fr)); align-items:end; gap:5px; min-width:700px; height:190px; overflow-x:auto; padding:10px 4px 0; border-bottom:1px solid #e2e8f0; }
+.analytics-chart-col { height:100%; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:5px; }
+.analytics-chart-value { min-height:13px; color:#64748b; font:600 .58rem 'Cairo',sans-serif; }
+.analytics-chart-track { flex:1; width:100%; min-height:70px; display:flex; align-items:flex-end; background:#f1f5f9; border-radius:5px 5px 0 0; overflow:hidden; }
+.analytics-chart-track span { display:block; width:100%; min-height:0; background:linear-gradient(180deg,#c5a059,#0f172a); border-radius:5px 5px 0 0; }
+.analytics-chart-col small { color:#94a3b8; font: .58rem 'Cairo',sans-serif; white-space:nowrap; }
+.analytics-message { color:#64748b; font-size:.82rem; margin:12px 0; }
+.analytics-message.is-error { color:#991b1b; }
+.analytics-note { color:#94a3b8; font-size:.7rem; line-height:1.8; margin:13px 0 0; }
+@media (max-width:640px) { .analytics-stat-grid { grid-template-columns:1fr; } .analytics-stat { grid-template-columns:1fr auto; align-items:center; } .analytics-stat small { grid-column:1/-1; } .analytics-chart-heading { align-items:flex-start; flex-direction:column; } }

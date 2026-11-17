@@ -116,17 +116,29 @@ export function normalizeSite(input: unknown): SiteData {
  *  2) المواد اللي لسه ملهاش موعد، في الآخر بترتيبها اليدوي.
  */
 export function sortSubjectsForDisplay(subjects: Subject[]): Subject[] {
-  const withDate: { subject: Subject; time: number }[] = [];
+  const upcoming: { subject: Subject; time: number }[] = [];
+  const finished: { subject: Subject; time: number }[] = [];
   const withoutDate: Subject[] = [];
+  const now = Date.now();
 
   for (const subject of subjects) {
     const iso = cairoWallToUtcIso(subject.examAt);
-    if (iso) withDate.push({ subject, time: new Date(iso).getTime() });
-    else withoutDate.push(subject);
+    if (!iso) {
+      withoutDate.push(subject);
+      continue;
+    }
+    const entry = { subject, time: new Date(iso).getTime() };
+    if (entry.time <= now) finished.push(entry);
+    else upcoming.push(entry);
   }
 
-  withDate.sort((a, b) => a.time - b.time);
-  return [...withDate.map((entry) => entry.subject), ...withoutDate];
+  upcoming.sort((a, b) => a.time - b.time);
+  finished.sort((a, b) => b.time - a.time);
+  return [
+    ...upcoming.map((entry) => entry.subject),
+    ...withoutDate,
+    ...finished.map((entry) => entry.subject),
+  ];
 }
 
 /** تجهيز المواد للعرض في الصفحة العامة (مع التوقيت المحسوب) */

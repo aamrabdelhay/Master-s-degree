@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { formatCairoLabel } from '@/lib/cairo';
 import { DEFAULT_BOOK_URL } from '@/lib/defaults';
 import type { QuestionGroup, SiteData, Subject } from '@/lib/types';
+import AnalyticsPanel from './AnalyticsPanel';
 
 function uid(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -614,6 +615,7 @@ export default function AdminDashboard({
             />
           )}
         </section>
+        <AnalyticsPanel />
       </div>
 
       <div className="save-bar">
