@@ -1078,3 +1078,29 @@ header {
 @media (prefers-reduced-motion:reduce) {
   .sm-progress-track span,.sm-card-progress span,.study-mood-launcher { transition:none; }
 }
+
+
+/* --------- نافذة الاشتراك في الإشعارات --------- */
+.push-optin-card {
+  position:fixed; z-index:74; right:18px; bottom:76px; width:min(370px,calc(100vw - 28px));
+  display:grid; grid-template-columns:42px minmax(0,1fr) 22px; gap:11px;
+  align-items:start; padding:14px; border:1px solid rgba(197,160,89,.85);
+  border-radius:15px; background:rgba(255,255,255,.97);
+  box-shadow:0 14px 35px rgba(15,23,42,.18); backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px); font-family:'Cairo',sans-serif;
+  animation:pushPromptIn .28s ease-out;
+}
+@keyframes pushPromptIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.push-optin-icon { width:42px; height:42px; display:grid; place-items:center; border-radius:12px; color:var(--gold); background:#0f172a; border:1px solid var(--gold); }
+.push-optin-copy { min-width:0; }
+.push-optin-copy strong { color:var(--primary); font-size:.88rem; }
+.push-optin-copy p { margin:4px 0 9px; color:#64748b; font-size:.73rem; line-height:1.7; }
+.push-optin-actions { display:flex; flex-wrap:wrap; align-items:center; gap:7px; }
+.push-optin-actions button { border:1px solid var(--gold); border-radius:8px; padding:6px 10px; background:#0f172a; color:#f4d58d; font:700 .72rem 'Cairo',sans-serif; cursor:pointer; }
+.push-optin-actions button:disabled { opacity:.55; cursor:wait; }
+.push-optin-actions .push-optin-dismiss { background:#f8fafc; color:#64748b; border-color:#dbe2ea; }
+.push-optin-close { border:0; background:transparent; color:#94a3b8; font-size:1.2rem; line-height:1; cursor:pointer; }
+@media (max-width:760px) {
+  .push-optin-card { right:50%; transform:translateX(50%); bottom:69px; width:min(390px,calc(100vw - 20px)); }
+}
+@media (prefers-reduced-motion:reduce) { .push-optin-card { animation:none; } }

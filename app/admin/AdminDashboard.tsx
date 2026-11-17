@@ -6,6 +6,7 @@ import { formatCairoLabel } from '@/lib/cairo';
 import { DEFAULT_BOOK_URL } from '@/lib/defaults';
 import type { QuestionGroup, SiteData, Subject } from '@/lib/types';
 import AnalyticsPanel from './AnalyticsPanel';
+import PushBroadcastPanel from './PushBroadcastPanel';
 
 function uid(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -615,6 +616,7 @@ export default function AdminDashboard({
             />
           )}
         </section>
+        <PushBroadcastPanel />
         <AnalyticsPanel />
       </div>
 
