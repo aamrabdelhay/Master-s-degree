@@ -1,3 +1,11 @@
+self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('push', (event) => {
   let payload = {};
   try {
@@ -10,7 +18,7 @@ self.addEventListener('push', (event) => {
   const url = typeof payload.url === 'string' && payload.url.startsWith('/') ? payload.url : '/';
 
   event.waitUntil((async () => {
-    let icon = '/icon-192.png';
+    let icon = null;
     try {
       const response = await fetch('/api/site-icon', { cache: 'no-store' });
       if (response.ok) {
@@ -23,17 +31,30 @@ self.addEventListener('push', (event) => {
         }
       }
     } catch {
-      // Keep the bundled icon as a fallback when the settings endpoint is unavailable.
+      // Do not fall back to a bundled legacy logo.
     }
 
-    await self.registration.showNotification(title, {
-      body, icon, badge: '/icon-192.png',
-      dir: 'rtl', lang: 'ar',
+    const notificationOptions = {
+      body,
+      dir: 'rtl',
+      lang: 'ar',
       tag: typeof payload.tag === 'string' ? payload.tag : 'law-diploma-exam',
-      renotify: false, timestamp: Date.now(), data: { url },
-    });
+      renotify: false,
+      timestamp: Date.now(),
+      data: { url },
+    };
+
+    // Both the large notification icon and small badge use the administrator's
+    // current uploaded image. No old bundled icon is used as a fallback.
+    if (icon) {
+      notificationOptions.icon = icon;
+      notificationOptions.badge = icon;
+    }
+
+    await self.registration.showNotification(title, notificationOptions);
   })());
 });
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const path = event.notification.data && typeof event.notification.data.url === 'string'

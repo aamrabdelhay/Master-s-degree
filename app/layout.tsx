@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import AOSInit from '@/components/AOSInit';
 import PWARegister from '@/components/PWARegister';
+import PushOptInPrompt from '@/components/PushOptInPrompt';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
+import { getVersionedPwaIconUrl } from '@/lib/pwa-icon';
 import { getSite } from '@/lib/store';
 import './globals.css';
 
@@ -10,8 +12,17 @@ export const revalidate = 0;
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSite();
-  const iconUrl = site.pwaIconUrl ? '/api/site-icon-image' : '/icon-192.png';
+  const iconUrl = getVersionedPwaIconUrl(site.pwaIconUrl);
   const iconType = site.pwaIconMime || 'image/png';
+  const icons = iconUrl
+    ? {
+        icon: [
+          { url: iconUrl, sizes: '192x192', type: iconType },
+          { url: iconUrl, sizes: '512x512', type: iconType },
+        ],
+        apple: [{ url: iconUrl, sizes: '180x180', type: iconType }],
+      }
+    : undefined;
 
   return {
     title: 'دبلومة القانون الخاص — جامعة العاصمة | جدول الامتحانات النهائية',
@@ -24,13 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
       statusBarStyle: 'default',
       title: 'دبلومة القانون',
     },
-    icons: {
-      icon: [
-        { url: iconUrl, sizes: '192x192', type: iconType },
-        { url: iconUrl, sizes: '512x512', type: iconType },
-      ],
-      apple: [{ url: iconUrl, sizes: '180x180', type: iconType }],
-    },
+    ...(icons ? { icons } : {}),
     robots: { index: true, follow: true },
     openGraph: {
       title: 'دبلومة القانون الخاص — جامعة العاصمة',
@@ -60,6 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {children}
+        <PushOptInPrompt />
         <AnalyticsTracker />
         <PWARegister />
         <AOSInit />

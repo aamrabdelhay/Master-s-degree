@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto';
 import type { MetadataRoute } from 'next';
+import { getVersionedPwaIconUrl } from '@/lib/pwa-icon';
 import { getSite } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
@@ -7,10 +7,7 @@ export const revalidate = 0;
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const site = await getSite();
-  const iconVersion = site.pwaIconUrl
-    ? createHash('sha256').update(site.pwaIconUrl).digest('hex').slice(0, 12)
-    : null;
-  const customIcon = iconVersion ? `/api/site-icon-image?v=${iconVersion}` : null;
+  const customIcon = getVersionedPwaIconUrl(site.pwaIconUrl);
   const contentType = site.pwaIconMime || 'image/png';
 
   return {
@@ -25,14 +22,12 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     display: 'standalone',
     background_color: '#f1f5f9',
     theme_color: '#0f172a',
-    icons: customIcon
-      ? [
-          { src: customIcon, sizes: '512x512', type: contentType, purpose: 'any' },
-        ]
-      : [
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-        ],
+    ...(customIcon
+      ? {
+          icons: [
+            { src: customIcon, sizes: '512x512', type: contentType, purpose: 'any' },
+          ],
+        }
+      : {}),
   };
 }
