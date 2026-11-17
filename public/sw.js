@@ -8,12 +8,29 @@ self.addEventListener('push', (event) => {
   const title = typeof payload.title === 'string' ? payload.title : 'دبلومة القانون الخاص';
   const body = typeof payload.body === 'string' ? payload.body : 'عندك تنبيه جديد.';
   const url = typeof payload.url === 'string' && payload.url.startsWith('/') ? payload.url : '/';
-  event.waitUntil(self.registration.showNotification(title, {
-    body, icon: '/icon-192.png', badge: '/icon-192.png',
-    dir: 'rtl', lang: 'ar',
-    tag: typeof payload.tag === 'string' ? payload.tag : 'law-diploma-exam',
-    renotify: false, data: { url },
-  }));
+
+  event.waitUntil((async () => {
+    let icon = '/icon-192.png';
+    try {
+      const response = await fetch('/api/site-icon', { cache: 'no-store' });
+      if (response.ok) {
+        const settings = await response.json();
+        if (typeof settings.pwaIconUrl === 'string' &&
+            /^https:\/\//i.test(settings.pwaIconUrl)) {
+          icon = settings.pwaIconUrl;
+        }
+      }
+    } catch {
+      // Keep the bundled icon as a fallback when the settings endpoint is unavailable.
+    }
+
+    await self.registration.showNotification(title, {
+      body, icon, badge: icon,
+      dir: 'rtl', lang: 'ar',
+      tag: typeof payload.tag === 'string' ? payload.tag : 'law-diploma-exam',
+      renotify: false, data: { url },
+    });
+  })());
 });
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();

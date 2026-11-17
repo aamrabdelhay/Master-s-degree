@@ -37,6 +37,9 @@ export type SiteData = {
   headerTitle: string;
   headerSubtitle: string;
   subjects: Subject[];
+  /** Public image used for the installed PWA and push notifications. */
+  pwaIconUrl?: string;
+  pwaIconMime?: 'image/png' | 'image/jpeg' | 'image/webp';
   /** معرّفات ترحيلات البيانات التي تم تطبيقها مرة واحدة */
   migrations?: string[];
   updatedAt: string;

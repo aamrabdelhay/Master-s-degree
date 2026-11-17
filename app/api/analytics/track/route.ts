@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { analyticsReady, recordSiteVisit, saveAnonymousStudyScore, touchActiveVisitor } from '@/lib/analytics';
+import { analyticsReady, recordSiteVisit, touchActiveVisitor } from '@/lib/analytics';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-type TrackBody = { event?: unknown; deviceId?: unknown; score?: unknown; };
+type TrackBody = { event?: unknown; deviceId?: unknown; };
 function validDeviceId(value: unknown): value is string {
   return typeof value === 'string' && /^[a-zA-Z0-9_-]{20,64}$/.test(value);
 }
@@ -24,12 +24,6 @@ export async function POST(request: NextRequest) {
     const activeNow = await touchActiveVisitor(body.deviceId);
     return NextResponse.json({ ok: true, activeNow }, { headers: { 'Cache-Control': 'no-store' } });
   }
-  if (body.event === 'score') {
-    if (typeof body.score !== 'number' || !Number.isFinite(body.score) || body.score < 0 || body.score > 100) {
-      return NextResponse.json({ error: 'نسبة الإنجاز غير صالحة.' }, { status: 400 });
-    }
-    const result = await saveAnonymousStudyScore(body.deviceId, body.score);
-    return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } });
-  }
+
   return NextResponse.json({ error: 'نوع الحدث غير معروف.' }, { status: 400 });
 }

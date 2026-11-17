@@ -605,24 +605,37 @@ textarea {
 
 
 /* --------- إحصائيات الموقع --------- */
-.analytics-panel { margin-top: 22px; }
-.analytics-stat-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
-.analytics-stat { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; display:grid; gap:3px; }
+.analytics-panel { margin-top:22px; width:100%; min-width:0; max-width:100%; overflow:hidden; box-sizing:border-box; }
+.analytics-stat-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; width:100%; min-width:0; }
+.analytics-stat { min-width:0; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; display:grid; gap:3px; }
 .analytics-stat span { color:#64748b; font-size:.78rem; }
-.analytics-stat strong { color:var(--primary); font:900 1.65rem 'Cairo',sans-serif; }
+.analytics-stat strong { color:var(--primary); font:900 1.65rem 'Cairo',sans-serif; overflow-wrap:anywhere; }
 .analytics-stat small { color:#94a3b8; font-size:.68rem; }
-.analytics-chart-heading { display:flex; justify-content:space-between; gap:10px; align-items:center; margin:20px 0 9px; color:#334155; font-size:.86rem; }
+.analytics-chart-heading { display:flex; justify-content:space-between; gap:10px; align-items:center; margin:20px 0 9px; color:#334155; font-size:.86rem; min-width:0; }
+.analytics-chart-heading > * { min-width:0; }
 .analytics-chart-heading small { color:#94a3b8; font-size:.7rem; }
-.analytics-chart { display:grid; grid-template-columns:repeat(24,minmax(24px,1fr)); align-items:end; gap:5px; min-width:700px; height:190px; overflow-x:auto; padding:10px 4px 0; border-bottom:1px solid #e2e8f0; }
-.analytics-chart-col { height:100%; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:5px; }
-.analytics-chart-value { min-height:13px; color:#64748b; font:600 .58rem 'Cairo',sans-serif; }
-.analytics-chart-track { flex:1; width:100%; min-height:70px; display:flex; align-items:flex-end; background:#f1f5f9; border-radius:5px 5px 0 0; overflow:hidden; }
+.analytics-chart-viewport { width:100%; max-width:100%; min-width:0; overflow:hidden; box-sizing:border-box; }
+.analytics-chart { display:grid; width:100%; min-width:0; max-width:100%; box-sizing:border-box; grid-template-columns:repeat(24,minmax(0,1fr)); align-items:end; gap:clamp(1px,.45vw,5px); height:190px; overflow:hidden; padding:10px 2px 0; border-bottom:1px solid #e2e8f0; }
+.analytics-chart-col { height:100%; min-width:0; max-width:100%; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:5px; overflow:hidden; }
+.analytics-chart-value { min-height:13px; max-width:100%; overflow:hidden; color:#64748b; font:600 .58rem 'Cairo',sans-serif; white-space:nowrap; }
+.analytics-chart-track { flex:1; width:100%; min-width:0; min-height:70px; display:flex; align-items:flex-end; background:#f1f5f9; border-radius:5px 5px 0 0; overflow:hidden; }
 .analytics-chart-track span { display:block; width:100%; min-height:0; background:linear-gradient(180deg,#c5a059,#0f172a); border-radius:5px 5px 0 0; }
 .analytics-chart-col small { color:#94a3b8; font: .58rem 'Cairo',sans-serif; white-space:nowrap; }
-.analytics-message { color:#64748b; font-size:.82rem; margin:12px 0; }
+.analytics-message { color:#64748b; font-size:.82rem; margin:12px 0; overflow-wrap:anywhere; }
 .analytics-message.is-error { color:#991b1b; }
 .analytics-note { color:#94a3b8; font-size:.7rem; line-height:1.8; margin:13px 0 0; }
-@media (max-width:640px) { .analytics-stat-grid { grid-template-columns:1fr; } .analytics-stat { grid-template-columns:1fr auto; align-items:center; } .analytics-stat small { grid-column:1/-1; } .analytics-chart-heading { align-items:flex-start; flex-direction:column; } }
+@media (max-width:640px) {
+  .analytics-stat-grid { grid-template-columns:1fr; gap:8px; }
+  .analytics-stat { grid-template-columns:minmax(0,1fr) auto; align-items:center; padding:10px 12px; }
+  .analytics-stat strong { font-size:1.25rem; }
+  .analytics-stat small { grid-column:1/-1; }
+  .analytics-chart-heading { align-items:flex-start; flex-direction:column; }
+  .analytics-chart { height:170px; gap:1px; padding-inline:0; }
+  .analytics-chart-col { gap:3px; }
+  .analytics-chart-value { font-size:.43rem; min-height:10px; line-height:1; }
+  .analytics-chart-col small { font-size:.46rem; }
+  .analytics-chart-col:not(:nth-child(4n + 1)) small { display:none; }
+}
 
 
 /* --------- البث المباشر للإشعارات --------- */
@@ -647,3 +660,11 @@ textarea {
 .push-broadcast-preview strong { color:#0f172a; font-size:.95rem; }
 .push-broadcast-preview p { margin:0; color:#475569; font-size:.82rem; }
 .push-broadcast-preview small { color:#94a3b8; font-size:.7rem; }
+
+/* --------- أيقونة التطبيق PWA --------- */
+.pwa-icon-panel .pwa-icon-controls { display:flex; align-items:center; gap:16px; flex-wrap:wrap; min-width:0; }
+.pwa-icon-preview { width:112px; height:112px; flex:0 0 112px; border:1px solid #e2e8f0; border-radius:22px; background:#f8fafc; object-fit:cover; }
+.pwa-icon-placeholder { display:grid; place-items:center; color:#94a3b8; font-size:.72rem; }
+.pwa-icon-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
+.pwa-icon-actions small { display:block; flex-basis:100%; color:#94a3b8; font-size:.72rem; line-height:1.8; }
+@media (max-width:640px) { .pwa-icon-controls { align-items:flex-start; } .pwa-icon-preview { width:88px; height:88px; flex-basis:88px; } }

@@ -43,7 +43,7 @@ export default function AnalyticsPanel() {
       </div>
       {loading && !data ? <p className="analytics-message">جاري تحميل الإحصائيات…</p>
         : error && !data ? <p className="analytics-message is-error">{error}</p>
-          : <div className="analytics-chart" role="img" aria-label="رسم بياني للزيارات في آخر ٢٤ ساعة">
+          : <div className="analytics-chart-viewport"><div className="analytics-chart" role="img" aria-label="رسم بياني للزيارات في آخر ٢٤ ساعة">
             {data?.buckets.map((bucket) => (
               <div className="analytics-chart-col" key={bucket.hour} title={bucket.label + ': ' + bucket.visits + ' زيارة'}>
                 <span className="analytics-chart-value">{bucket.visits || ''}</span>
@@ -51,7 +51,7 @@ export default function AnalyticsPanel() {
                 <small>{bucket.label}</small>
               </div>
             ))}
-          </div>}
+          </div></div>}
       {error && data && <p className="analytics-message is-error">{error}</p>}
       <p className="analytics-note">العداد بيُحدّث تلقائيًا كل ٣٠ ثانية. الزيارة بتتحسب مرة واحدة لكل جلسة متصفح، والعدد الحالي يعتمد على نبضات النشاط.</p>
     </section>

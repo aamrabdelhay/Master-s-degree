@@ -42,7 +42,6 @@ export default async function HomePage() {
       </main>
       <footer className="site-footer">
         <StudyMoodLauncher />
-        <span>دبلومة القانون الخاص <span className="dot">•</span> جامعة العاصمة</span>
       </footer>
       <PushOptInPrompt />
 

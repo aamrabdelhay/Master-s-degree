@@ -103,6 +103,9 @@ export function normalizeSite(input: unknown): SiteData {
     headerTitle: text(raw.headerTitle, MAX_NAME).trim() || createDefaultSite().headerTitle,
     headerSubtitle: text(raw.headerSubtitle, MAX_NAME).trim() || createDefaultSite().headerSubtitle,
     subjects,
+    pwaIconUrl: safeUrl(raw.pwaIconUrl) || undefined,
+    pwaIconMime: raw.pwaIconMime === 'image/png' || raw.pwaIconMime === 'image/jpeg' || raw.pwaIconMime === 'image/webp'
+      ? raw.pwaIconMime : undefined,
     migrations: Array.isArray(raw.migrations)
       ? raw.migrations.filter((value): value is string => typeof value === 'string').slice(0, 50)
       : [],
