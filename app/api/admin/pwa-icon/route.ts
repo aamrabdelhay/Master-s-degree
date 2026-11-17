@@ -31,8 +31,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'انتهت جلسة الأدمن. سجّل الدخول مرة أخرى.' }, { status: 401 });
   }
 
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return NextResponse.json({ error: 'تخزين الصور غير متصل بالموقع.' }, { status: 503 });
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) {
+    return NextResponse.json({ error: 'تخزين الصور غير متصل بالموقع. راجع إعداد BLOB_READ_WRITE_TOKEN في Vercel.' }, { status: 503 });
   }
 
   let form: FormData;
@@ -62,17 +63,23 @@ export async function POST(request: NextRequest) {
 
   const extension = mime === 'image/png' ? 'png' : mime === 'image/jpeg' ? 'jpg' : 'webp';
   try {
+    // The connected project token belongs to a private Blob store.
+    // Keep the icon private in storage and serve it through the authenticated app origin.
     const blob = await put(`pwa-icons/app-icon.${extension}`, file, {
-      access: 'public',
+      access: 'private',
       addRandomSuffix: true,
       contentType: mime,
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token,
     });
     return NextResponse.json(
       { ok: true, url: blob.url, contentType: mime },
       { headers: { 'Cache-Control': 'no-store, max-age=0' } },
     );
-  } catch {
-    return NextResponse.json({ error: 'تعذّر رفع الصورة إلى مخزن الصور. تأكد من إعداد Blob العام.' }, { status: 503 });
+  } catch (error) {
+    console.error('[pwa-icon-upload] Blob upload failed:', error);
+    return NextResponse.json(
+      { error: 'تعذّر رفع الصورة إلى مخزن الصور. راجع صلاحية BLOB_READ_WRITE_TOKEN والمخزن المرتبط به.' },
+      { status: 503 },
+    );
   }
 }
