@@ -24,11 +24,13 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     icons: customIcon
       ? [
           { src: customIcon, sizes: '192x192', type: contentType, purpose: 'any' },
-          { src: customIcon, sizes: '512x512', type: contentType, purpose: 'any maskable' },
+          { src: customIcon, sizes: '512x512', type: contentType, purpose: 'any' },
+          { src: customIcon, sizes: '512x512', type: contentType, purpose: 'maskable' },
         ]
       : [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
   };
 }
