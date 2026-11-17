@@ -62,8 +62,9 @@ export async function POST(request: NextRequest) {
     let sent = 0;
     let failed = 0;
     const expired = new Set<string>();
-    // Keep one current announcement per type instead of stacking repeated broadcasts.
-  const tag = isSiteUpdate ? 'site-update' : 'admin-announcement';
+    const failureStatuses: Record<string, number> = {};
+    // A unique tag per broadcast: a repeated tag replaced the previous notification silently.
+    const tag = (isSiteUpdate ? 'site-update-' : 'admin-') + Date.now().toString(36);
     for (let start = 0; start < subscriptions.length; start += 20) {
       const batch = subscriptions.slice(start, start + 20);
       const results = await Promise.all(batch.map(async (subscription) => {
@@ -72,20 +73,22 @@ export async function POST(request: NextRequest) {
           return { ok: true, endpoint: subscription.endpoint };
         } catch (error) {
           const status = statusCodeFromError(error);
-          return { ok: false, endpoint: subscription.endpoint, expired: status === 404 || status === 410 };
+          return { ok: false, endpoint: subscription.endpoint, status, expired: status === 404 || status === 410 };
         }
       }));
       for (const result of results) {
         if (result.ok) sent += 1;
         else {
           failed += 1;
+          const label = String(result.status ?? 'network');
+          failureStatuses[label] = (failureStatuses[label] || 0) + 1;
           if (result.expired) expired.add(result.endpoint);
         }
       }
     }
     const removedExpiredSubscriptions = await removePushSubscriptions([...expired]);
     return NextResponse.json({
-      ok: true, type: notificationType, total: subscriptions.length, sent, failed, removedExpiredSubscriptions,
+      ok: true, type: notificationType, total: subscriptions.length, sent, failed, failureStatuses, removedExpiredSubscriptions,
     }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
   } catch {
     return NextResponse.json({ error: 'حصل خطأ أثناء إرسال الإشعار.' }, { status: 500 });

@@ -2,19 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import type { PublicSubject } from '@/lib/types';
+import { canUseWebPush, getOrCreateSubscription, isInAppBrowser, registerPushWorker } from '@/lib/pushClient';
 
 type PreferenceMode = 'all' | 'selected';
 type NavigatorWithStandalone = Navigator & { standalone?: boolean };
 
-function decodeApplicationServerKey(value: string): ArrayBuffer {
-  const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
-  const binary = window.atob(padded);
-  const buffer = new ArrayBuffer(binary.length);
-  const key = new Uint8Array(buffer);
-  for (let index = 0; index < binary.length; index += 1) key[index] = binary.charCodeAt(index);
-  return buffer;
-}
 function apiError(value: unknown, fallback: string): string {
   if (typeof value === 'object' && value !== null &&
       typeof (value as Record<string, unknown>).error === 'string') {
@@ -45,8 +37,7 @@ export default function PushNotifications({ subjects }: { subjects: PublicSubjec
       setSupportChecked(true);
       return;
     }
-    const canPush = window.isSecureContext &&
-      'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    const canPush = !isInAppBrowser() && canUseWebPush();
     setSupported(canPush);
     setSupportChecked(true);
     if (canPush) {
@@ -70,11 +61,8 @@ export default function PushNotifications({ subjects }: { subjects: PublicSubjec
           : 'التنبيهات غير مفعّلة على هذا الجهاز.');
         return;
       }
-      const registration = await navigator.serviceWorker.ready;
-      const existing = await registration.pushManager.getSubscription();
-      const current = existing || await registration.pushManager.subscribe({
-        userVisibleOnly: true, applicationServerKey: decodeApplicationServerKey(publicKey),
-      });
+      const registration = await registerPushWorker();
+      const current = await getOrCreateSubscription(registration, publicKey);
       const response = await fetch('/api/push/subscribe', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

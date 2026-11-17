@@ -22,7 +22,13 @@ export async function generateMetadata(): Promise<Metadata> {
         ],
         apple: [{ url: iconUrl, sizes: '180x180', type: iconType }],
       }
-    : undefined;
+    : {
+        icon: [
+          { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+        ],
+        apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+      };
 
   return {
     title: 'دبلومة القانون الخاص — جامعة العاصمة | جدول الامتحانات النهائية',
@@ -35,7 +41,7 @@ export async function generateMetadata(): Promise<Metadata> {
       statusBarStyle: 'default',
       title: 'دبلومة القانون',
     },
-    ...(icons ? { icons } : {}),
+    icons,
     robots: { index: true, follow: true },
     openGraph: {
       title: 'دبلومة القانون الخاص — جامعة العاصمة',

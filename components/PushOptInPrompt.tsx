@@ -1,17 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import {
+  canUseWebPush, getOrCreateSubscription, isInAppBrowser, registerPushWorker,
+} from '@/lib/pushClient';
 
 type NavigatorWithStandalone = Navigator & { standalone?: boolean };
-
-function decodeKey(value: string): ArrayBuffer {
-  const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
-  const binary = window.atob(padded);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  return bytes.buffer;
-}
+type Mode = 'idle' | 'ask' | 'denied' | 'ios' | 'unsupported' | 'retry';
 
 function errorMessage(value: unknown): string {
   if (typeof value === 'object' && value !== null &&
@@ -21,80 +16,64 @@ function errorMessage(value: unknown): string {
   return 'مش قادرين نفعل التنبيهات دلوقتي.';
 }
 
+async function saveSubscription(subscription: PushSubscription, keepPreference: boolean) {
+  const response = await fetch('/api/push/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      subscription: subscription.toJSON(),
+      preference: { mode: keepPreference ? 'keep' : 'all', subjectIds: [] },
+    }),
+  });
+  const result: unknown = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(errorMessage(result));
+}
+
 export default function PushOptInPrompt() {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
+  const [mode, setMode] = useState<Mode>('idle');
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const [iosNeedsHome, setIosNeedsHome] = useState(false);
-  const [permissionDenied, setPermissionDenied] = useState(false);
-  const [hasSubscription, setHasSubscription] = useState(false);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     let timer: number | undefined;
-    const reveal = (delay = 2400) => {
-      if (timer !== undefined) window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        if (mounted) setVisible(true);
-      }, delay);
+    const show = (next: Mode, text = '', delay = 1500) => {
+      setMode(next);
+      setMessage(text);
+      timer = window.setTimeout(() => { if (mounted) setVisible(true); }, delay);
     };
 
-    // Detect iOS before checking PushManager: Safari on iPhone/iPad does not
-    // expose web-push until the site is installed as a Home Screen web app.
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const nav = navigator as NavigatorWithStandalone;
-    const standalone = nav.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    const standalone = (navigator as NavigatorWithStandalone).standalone === true ||
+      window.matchMedia('(display-mode: standalone)').matches;
 
     if (ios && !standalone) {
-      setIosNeedsHome(true);
-      setMessage('على iPhone وiPad، أضف الموقع إلى الشاشة الرئيسية وافتحه من الأيقونة أولًا لتفعيل الإشعارات.');
-      reveal();
+      show('ios', 'على iPhone وiPad: اضغط زر المشاركة ثم "إضافة إلى الشاشة الرئيسية"، وافتح الموقع من الأيقونة لتفعيل الإشعارات.');
+    } else if (isInAppBrowser() || !canUseWebPush()) {
+      show('unsupported', 'المتصفح اللي فاتح منه الموقع (زي متصفح تيليجرام أو فيسبوك) مش بيدعم الإشعارات. افتح الرابط من Chrome أو Safari.');
+    } else if (!publicKey) {
+      // Nothing to subscribe with; stay silent for students.
+    } else if (Notification.permission === 'denied') {
+      show('denied', 'الإشعارات محظورة من المتصفح. اسمح بها من إعدادات الموقع (أيقونة القفل جنب الرابط) ثم أعد تحميل الصفحة.');
+    } else if (Notification.permission === 'default') {
+      show('ask', 'خليك متابع مواعيد الامتحانات وأي إعلان جديد من الإدارة.');
     } else {
-      const canPush = window.isSecureContext &&
-        'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-
-      if (canPush) {
-        if (Notification.permission === 'denied') {
-          setPermissionDenied(true);
-          setMessage('إشعارات الموقع محظورة من المتصفح. اسمح بها من إعدادات الموقع في المتصفح ثم افتح الموقع مرة أخرى.');
-          reveal();
-        } else if (Notification.permission !== 'granted') {
-          if (!publicKey) setMessage('إعدادات الإشعارات غير مكتملة على الموقع حاليًا.');
-          reveal();
-        } else {
-          void (async () => {
-            try {
-              await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-              const registration = await navigator.serviceWorker.ready;
-              const subscription = await registration.pushManager.getSubscription();
-              if (!mounted) return;
-              if (!subscription) {
-                setMessage('إذن الإشعارات موجود، لكن الاشتراك على الجهاز لم يكتمل بعد.');
-                reveal(1200);
-                return;
-              }
-
-              const response = await fetch('/api/push/subscribe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  subscription: subscription.toJSON(),
-                  preference: { mode: 'all', subjectIds: [] },
-                }),
-              });
-              if (!response.ok) throw new Error('تعذّر تأكيد اشتراك الإشعارات على الموقع.');
-              if (!mounted) return;
-              setHasSubscription(true);
-            } catch {
-              if (!mounted) return;
-              setMessage('إذن الإشعارات موجود، لكن تعذّر تأكيد الاشتراك. أعد تفعيله من هنا.');
-              reveal(1200);
-            }
-          })();
+      // Permission already granted: make sure this device is subscribed with the
+      // current key and known to the server, silently and without touching preferences.
+      void (async () => {
+        try {
+          const registration = await registerPushWorker();
+          const subscription = await getOrCreateSubscription(registration, publicKey);
+          await saveSubscription(subscription, true);
+          if (mounted) setDone(true);
+        } catch {
+          if (mounted) show('retry', 'إذن الإشعارات موجود، لكن تعذّر تأكيد الاشتراك. اضغط لإعادة التفعيل.', 800);
         }
-      }
+      })();
     }
 
     return () => {
@@ -103,59 +82,27 @@ export default function PushOptInPrompt() {
     };
   }, [publicKey]);
 
-  function dismiss() {
-    // Dismiss only for this page visit. The prompt returns on the next visit
-    // until browser permission and the server-side push subscription are active.
-    setVisible(false);
-  }
-
   async function enable() {
-    if (busy) return;
-    if (!publicKey) {
-      setMessage('إعدادات التنبيهات غير مكتملة على الموقع.');
-      return;
-    }
-    if (Notification.permission === 'denied') {
-      setPermissionDenied(true);
-      setMessage('الإشعارات محظورة من المتصفح. افتح إعدادات الموقع واسمح بالإشعارات، ثم أعد تحميل الصفحة.');
-      return;
-    }
-
+    if (busy || !publicKey) return;
     setBusy(true);
     setMessage('');
     try {
+      // Must run straight from the click so the browser shows its permission dialog.
       const permission = Notification.permission === 'granted'
         ? 'granted' : await Notification.requestPermission();
-      if (permission !== 'granted') {
-        if (permission === 'denied') {
-          setPermissionDenied(true);
-          setMessage('تم حظر الإشعارات من المتصفح. اسمح بها من إعدادات الموقع ثم أعد تحميل الصفحة.');
-          return;
-        }
-        setMessage('لم يتم منح إذن الإشعارات. يمكنك تفعيلها من الزر مرة أخرى.');
+      if (permission === 'denied') {
+        setMode('denied');
+        setMessage('تم حظر الإشعارات. اسمح بها من إعدادات الموقع ثم أعد تحميل الصفحة.');
         return;
       }
-
-      const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-      const ready = await navigator.serviceWorker.ready;
-      const existing = await ready.pushManager.getSubscription();
-      const subscription = existing || await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: decodeKey(publicKey),
-      });
-      const response = await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscription: subscription.toJSON(),
-          preference: { mode: 'all', subjectIds: [] },
-        }),
-      });
-      const result: unknown = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(errorMessage(result));
-
-      setHasSubscription(true);
-      setMessage('تم تفعيل الإشعارات على الجهاز ده بنجاح.');
+      if (permission !== 'granted') {
+        setMessage('لم يتم منح الإذن. تقدر تفعّلها من الزر مرة أخرى.');
+        return;
+      }
+      const registration = await registerPushWorker();
+      const subscription = await getOrCreateSubscription(registration, publicKey);
+      await saveSubscription(subscription, mode === 'retry');
+      setDone(true);
       setVisible(false);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'حصلت مشكلة أثناء تفعيل الإشعارات.');
@@ -164,9 +111,16 @@ export default function PushOptInPrompt() {
     }
   }
 
-  if (!visible || hasSubscription) return null;
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setMessage('تم نسخ الرابط. الصقه في Chrome أو Safari.');
+    } catch {
+      setMessage('انسخ الرابط من شريط العنوان وافتحه في Chrome أو Safari.');
+    }
+  }
 
-  const canActivate = Boolean(publicKey) && !permissionDenied && !iosNeedsHome;
+  if (!visible || done || mode === 'idle') return null;
 
   return (
     <aside className="push-optin-card" aria-label="تفعيل إشعارات الموقع">
@@ -177,18 +131,19 @@ export default function PushOptInPrompt() {
         </svg>
       </div>
       <div className="push-optin-copy">
-        <strong>فعّل إشعارات الموقع</strong>
-        <p>{message || 'خليك متابع مواعيد الامتحانات وأي إعلان جديد من الإدارة.'}</p>
+        <strong>{mode === 'ask' || mode === 'retry' ? 'فعّل إشعارات الموقع' : 'الإشعارات مش متاحة هنا'}</strong>
+        <p>{message}</p>
         <div className="push-optin-actions">
-          {canActivate && (
+          {(mode === 'ask' || mode === 'retry') && (
             <button type="button" onClick={enable} disabled={busy}>
               {busy ? 'جارٍ التفعيل…' : 'تفعيل الإشعارات'}
             </button>
           )}
-          <button type="button" className="push-optin-dismiss" onClick={dismiss} aria-label="إغلاق">لاحقًا</button>
+          {mode === 'unsupported' && <button type="button" onClick={copyLink}>نسخ الرابط</button>}
+          <button type="button" className="push-optin-dismiss" onClick={() => setVisible(false)}>لاحقًا</button>
         </div>
       </div>
-      <button type="button" className="push-optin-close" onClick={dismiss} aria-label="إغلاق التنبيه">×</button>
+      <button type="button" className="push-optin-close" onClick={() => setVisible(false)} aria-label="إغلاق التنبيه">×</button>
     </aside>
   );
 }

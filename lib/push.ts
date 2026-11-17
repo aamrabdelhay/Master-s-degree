@@ -105,15 +105,44 @@ async function listPushBlobPaths(): Promise<string[]> {
 async function readBlobSubscription(pathname: string): Promise<StoredPushSubscription | null> {
   const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
   if (!token) throw new Error('Private Blob storage is not configured for push subscriptions.');
-  const result = await getBlob(pathname, { access: 'private', token });
-  if (!result || result.statusCode !== 200 || !result.stream) return null;
-  const raw = await new Response(result.stream).text();
   try {
+    const result = await getBlob(pathname, { access: 'private', token });
+    if (!result || result.statusCode !== 200 || !result.stream) return null;
+    const raw = await new Response(result.stream).text();
     const parsed: unknown = JSON.parse(raw);
     return isStoredSubscription(parsed) ? parsed : null;
   } catch {
+    // A single unreadable record must not stop a broadcast to everyone else.
     return null;
   }
+}
+
+const BLOB_PATH_RE = /^lawdiploma-push\/subscriptions\/([a-f0-9]{64})\/(\d{13})-[0-9a-f-]+\.json$/i;
+
+/** Cheap lookup of one device: lists only that endpoint's folder and reads its newest record. */
+async function findBlobSubscription(endpoint: string): Promise<{ subscription: StoredPushSubscription | null; oldPaths: string[] }> {
+  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  if (!token) throw new Error('Private Blob storage is not configured for push subscriptions.');
+  const page = await listBlobs({ prefix: endpointBlobPrefix(endpointHash(endpoint)), limit: 100, token });
+  const paths = page.blobs.map((blob) => blob.pathname).filter((pathname) => BLOB_PATH_RE.test(pathname)).sort();
+  if (paths.length === 0) return { subscription: null, oldPaths: [] };
+  const newest = paths[paths.length - 1];
+  const subscription = await readBlobSubscription(newest);
+  return { subscription, oldPaths: paths.slice(0, -1) };
+}
+
+async function countBlobEndpoints(): Promise<number> {
+  const hashes = new Set<string>();
+  for (const pathname of await listPushBlobPaths()) {
+    const match = pathname.match(BLOB_PATH_RE);
+    if (match) hashes.add(match[1]);
+  }
+  return hashes.size;
+}
+
+export async function findPushSubscription(endpoint: string): Promise<StoredPushSubscription | null> {
+  if (hasPerEndpointBlobStorage()) return (await findBlobSubscription(endpoint)).subscription;
+  return (await listLegacyPushSubscriptions()).find((item) => item.endpoint === endpoint) || null;
 }
 
 /** Migrate the previous shared array once; all new records are stored by endpoint. */
@@ -132,7 +161,7 @@ async function listBlobPushSubscriptions(): Promise<StoredPushSubscription[]> {
   const recognized = new Set<string>();
 
   for (const pathname of paths) {
-    const match = pathname.match(/^lawdiploma-push\/subscriptions\/([a-f0-9]{64})\/(\d{13})-[0-9a-f-]+\.json$/i);
+    const match = pathname.match(BLOB_PATH_RE);
     if (!match) continue;
     recognized.add(pathname);
     const current = latestByEndpoint.get(match[1]);
@@ -177,27 +206,36 @@ export async function listPushSubscriptions(): Promise<StoredPushSubscription[]>
 }
 
 export async function upsertPushSubscription(subscription: StoredPushSubscription): Promise<{ saved: boolean; count: number }> {
-  const subscriptions = await listPushSubscriptions();
-  const existing = subscriptions.find((item) => item.endpoint === subscription.endpoint);
-
-  if (!existing && subscriptions.length >= MAX_PUSH_SUBSCRIPTIONS) {
-    return { saved: false, count: subscriptions.length };
+  if (hasPerEndpointBlobStorage()) {
+    await migrateLegacyPushSubscriptions();
+    const { subscription: existing, oldPaths } = await findBlobSubscription(subscription.endpoint);
+    let total = 0;
+    if (!existing) {
+      total = await countBlobEndpoints();
+      if (total >= MAX_PUSH_SUBSCRIPTIONS) return { saved: false, count: total };
+    }
+    const stored: StoredPushSubscription = {
+      ...subscription,
+      createdAt: existing?.createdAt || subscription.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+    // One immutable private Blob per endpoint version prevents concurrent devices
+    // from overwriting one another through a shared read-modify-write array.
+    await writeBlobSubscription(stored);
+    if (oldPaths.length > 0) {
+      const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+      if (token) await deleteBlobs(oldPaths, { token }).catch(() => undefined);
+    }
+    return { saved: true, count: existing ? total : total + 1 };
   }
 
+  const legacy = await listLegacyPushSubscriptions();
+  const existing = legacy.find((item) => item.endpoint === subscription.endpoint);
   const stored: StoredPushSubscription = {
     ...subscription,
     createdAt: existing?.createdAt || subscription.createdAt,
     updatedAt: new Date().toISOString(),
   };
-
-  if (hasPerEndpointBlobStorage()) {
-    // One immutable private Blob per endpoint version prevents concurrent devices
-    // from overwriting one another through a shared read-modify-write array.
-    await writeBlobSubscription(stored);
-    return { saved: true, count: subscriptions.length + (existing ? 0 : 1) };
-  }
-
-  const legacy = await listLegacyPushSubscriptions();
   const index = legacy.findIndex((item) => item.endpoint === subscription.endpoint);
   if (index >= 0) {
     legacy[index] = stored;

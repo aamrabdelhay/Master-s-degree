@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 const MINUTE_MS = 60_000;
-const REMINDER_WINDOW_MS = 5 * MINUTE_MS;
+const REMINDER_WINDOW_MS = 10 * MINUTE_MS;
 type ReminderJob = {
   subscription: StoredPushSubscription; endpoint: string; key: string;
   title: string; body: string; url: string; tag: string; ttl: number;

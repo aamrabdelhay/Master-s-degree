@@ -280,7 +280,7 @@ export default function AdminDashboard({
       }
       setSite((current) => ({ ...current, pwaIconUrl: data.url, pwaIconMime: data.contentType }));
       touch();
-      setToast({ type: 'ok', message: 'تم تجهيز الصورة بمقاس 512×512 ورفعها. احفظ التغييرات لتطبيقها على الـPWA والإشعارات.' });
+      setToast({ type: 'ok', message: 'تم تجهيز الصورة بمقاس 512×512 ورفعها. احفظ التغييرات لتطبيقها على الـPWA. (إشعارات الموقع بتستخدم اللوجو الأساسي.)' });
     } catch (error) {
       setToast({ type: 'err', message: error instanceof Error ? error.message : 'تعذّر رفع الصورة.' });
     } finally {

@@ -35,10 +35,12 @@ export default function PushBroadcastPanel() {
       });
       const data = await response.json().catch(() => ({})) as {
         error?: string; sent?: number; failed?: number; total?: number;
+        failureStatuses?: Record<string, number>;
       };
       if (!response.ok) throw new Error(data.error || 'تعذّر إرسال الإشعار.');
       setStatus('تم الإرسال إلى ' + (data.sent || 0) + ' جهاز من أصل ' + (data.total || 0) +
-        (data.failed ? '، وفشل إرسال ' + data.failed + ' جهاز.' : ' جهاز بنجاح.'));
+        (data.failed ? '، وفشل إرسال ' + data.failed + ' جهاز (أكواد الفشل: ' +
+          Object.entries(data.failureStatuses || {}).map(([code, n]) => code + '×' + n).join('، ') + ').' : ' جهاز بنجاح.'));
       if (mode === 'custom') setMessage('');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'حصل خطأ أثناء الإرسال.');

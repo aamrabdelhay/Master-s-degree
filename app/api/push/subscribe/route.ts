@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSite } from '@/lib/store';
 import { isKvConfigured } from '@/lib/kv';
-import { isPushSubscriptionConfigured, isSafePushEndpoint, MAX_PUSH_SUBSCRIPTIONS, upsertPushSubscription, type StoredPushSubscription } from '@/lib/push';
+import { findPushSubscription, isPushSubscriptionConfigured, isSafePushEndpoint, MAX_PUSH_SUBSCRIPTIONS, upsertPushSubscription, type StoredPushSubscription } from '@/lib/push';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,7 +30,11 @@ export async function POST(request: NextRequest) {
   const site = await getSite();
   const validIds = new Set(site.subjects.map((subject) => subject.id));
   let subjectIds: string[] | null = null;
-  if (body.preference.mode === 'selected') {
+  if (body.preference.mode === 'keep') {
+    // Silent re-sync on page visits: never overwrite the subjects the student picked.
+    const current = await findPushSubscription(endpoint);
+    subjectIds = current ? current.subjectIds : null;
+  } else if (body.preference.mode === 'selected') {
     const requested = body.preference.subjectIds;
     if (!Array.isArray(requested) || requested.length === 0 || requested.length > 30 ||
         !requested.every((id) => typeof id === 'string' && id.length <= 64 && validIds.has(id))) {
