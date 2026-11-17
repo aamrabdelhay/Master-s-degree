@@ -1,4 +1,4 @@
-import SubjectCard from '@/components/SubjectCard';
+import SubjectList from '@/components/SubjectList';
 import StudyMoodLauncher from '@/components/StudyMoodLauncher';
 import PushOptInPrompt from '@/components/PushOptInPrompt';
 import { toPublicSubjects } from '@/lib/normalize';
@@ -37,10 +37,13 @@ export default async function HomePage() {
             </div>
           </div>
         ) : (
-          subjects.map((subject) => <SubjectCard key={subject.id} subject={subject} />)
+          <SubjectList subjects={subjects} />
         )}
       </main>
-      <StudyMoodLauncher />
+      <footer className="site-footer">
+        <p>دبلومة القانون الخاص <span className="dot">•</span> جامعة العاصمة</p>
+        <StudyMoodLauncher />
+      </footer>
       <PushOptInPrompt />
 
     </>
