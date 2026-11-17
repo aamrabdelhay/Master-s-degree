@@ -629,3 +629,42 @@ textarea {
 .push-broadcast-panel { margin-top:22px; }
 .push-broadcast-help { color:#64748b; font-size:.82rem; line-height:1.8; margin:-4px 0 15px; }
 .push-broadcast-status { margin:12px 0 0; color:#166534; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:9px; padding:9px 12px; font-size:.8rem; line-height:1.8; }
+
+
+/* --------- اختيار نوع الإشعار اليدوي --------- */
+.push-mode-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0 0 15px;
+  padding: 5px;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: #f8fafc;
+}
+.push-mode-switch button {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 13px;
+  background: transparent;
+  color: #64748b;
+  font: 700 .78rem 'Cairo',sans-serif;
+  cursor: pointer;
+}
+.push-mode-switch button.is-active {
+  color: #f4d58d;
+  background: #0f172a;
+  border-color: #c5a059;
+  box-shadow: 0 2px 7px rgba(15,23,42,.13);
+}
+.push-update-preview {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(197,160,89,.4);
+  border-radius: 11px;
+  background: #fffcf5;
+  color: #334155;
+}
+.push-update-preview strong { color: #0f172a; font-size: .9rem; }
+.push-update-preview p { margin: 5px 0; font-size: .8rem; line-height: 1.8; }
+.push-update-preview small { color: #8a672d; font-size: .7rem; line-height: 1.7; }
