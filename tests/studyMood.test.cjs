@@ -37,3 +37,18 @@ test('splits page ranges across dates without losing the page count', () => {
   assert.deepEqual(entries.map((entry) => entry.units), [5, 5]);
   assert.deepEqual(entries.map((entry) => [entry.fromPage, entry.toPage]), [[10, 15], [15, 20]]);
 });
+
+test('parses English page ranges and explicit page totals', () => {
+  const units = parseStudyUnits(['pages 10-20', 'عدد الصفحات: ١٢٠']);
+  assert.equal(units[0].kind, 'pages');
+  assert.equal(units[0].units, 10);
+  assert.equal(units[1].kind, 'pages');
+  assert.equal(units[1].units, 120);
+});
+
+test('preserves page and topic totals when splitting mixed syllabus content', () => {
+  const units = parseStudyUnits(['من ص ١٠ إلى ص ٢٠', 'نظرية العقد', '٣ صفحات']);
+  const entries = distributeStudyUnits(units, ['2026-11-17', '2026-11-18', '2026-11-19']);
+  assert.equal(entries.reduce((sum, entry) => sum + entry.units, 0), 14);
+  assert.equal(entries.filter((entry) => entry.kind === 'topic').length, 1);
+});
