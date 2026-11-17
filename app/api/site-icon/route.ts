@@ -7,7 +7,7 @@ export const revalidate = 0;
 export async function GET() {
   const site = await getSite();
   return NextResponse.json(
-    { pwaIconUrl: site.pwaIconUrl || null },
+    { pwaIconUrl: site.pwaIconUrl ? '/api/site-icon-image' : null },
     { headers: { 'Cache-Control': 'no-store, max-age=0' } },
   );
 }
