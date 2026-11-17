@@ -3,10 +3,8 @@ import { isKvConfigured, kvGetJson, kvGetRaw, kvIncr, kvSetJson } from './kv';
 const TOTAL_VISITS_KEY = 'lawdiploma:analytics:visits:total';
 const ACTIVE_VISITORS_KEY = 'lawdiploma:analytics:visitors:active';
 const HOURLY_PREFIX = 'lawdiploma:analytics:visits:hour:';
-const STUDY_SCORES_KEY = 'lawdiploma:analytics:study-scores:v1';
 const LONG_TTL = 100 * 365 * 24 * 60 * 60;
 type ActiveVisitorMap = Record<string, number>;
-type StudyScoreRecord = { deviceId: string; score: number; updatedAt: number };
 
 export function analyticsReady(): boolean { return isKvConfigured(); }
 export async function recordSiteVisit(now = Date.now()): Promise<void> {
@@ -48,19 +46,4 @@ export async function getAnalyticsSnapshot() {
     buckets,
     updatedAt: new Date(now).toISOString(),
   };
-}
-export async function saveAnonymousStudyScore(deviceId: string, score: number) {
-  const stored = await kvGetJson<StudyScoreRecord[]>(STUDY_SCORES_KEY);
-  const records = Array.isArray(stored) ? stored.filter((item) => item &&
-    typeof item.deviceId === 'string' && typeof item.score === 'number' && Number.isFinite(item.score)) : [];
-  const existingIndex = records.findIndex((item) => item.deviceId === deviceId);
-  const record: StudyScoreRecord = { deviceId, score: Math.max(0, Math.min(100, Math.round(score))), updatedAt: Date.now() };
-  if (existingIndex >= 0) records[existingIndex] = record;
-  else records.push(record);
-  records.sort((a, b) => b.updatedAt - a.updatedAt);
-  if (records.length > 20_000) records.length = 20_000;
-  await kvSetJson(STUDY_SCORES_KEY, records);
-  const others = records.filter((item) => item.deviceId !== deviceId);
-  const betterThan = others.filter((item) => item.score < record.score).length;
-  return { percentile: others.length === 0 ? null : Math.round((betterThan / others.length) * 100), sampleSize: others.length };
 }
