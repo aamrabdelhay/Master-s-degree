@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import type { PublicSubject } from '@/lib/types';
 import { addPlanDays, cairoDateKey } from '@/lib/studyPlan';
 import { distributeStudyUnits, estimateStudyMinutes, parseStudyUnits, type ParsedStudyUnit, type StudyMode, type StoredSubjectPlan } from '@/lib/studyMood';
-import { getOrCreateAnonymousDeviceId } from '@/lib/clientIdentity';
 
 const STORAGE_KEY = 'lawdiploma:study-mood:v1';
 const WEEK_DAYS = [
@@ -133,8 +132,6 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
   const [customPages, setCustomPages] = useState('');
   const [planMessage, setPlanMessage] = useState('');
   const [now, setNow] = useState(Date.now());
-  const [rank, setRank] = useState<{ percentile: number | null; sampleSize: number } | null>(null);
-  const [rankLoading, setRankLoading] = useState(false);
   const [timer, setTimer] = useState<TimerState>({ durationMinutes: 25, remainingSeconds: 25 * 60, endAt: null });
   const [customTimer, setCustomTimer] = useState('45');
 
@@ -172,25 +169,6 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
   }, { allUnits: 0, doneUnits: 0 }), [plans]);
 
   const percent = totals.allUnits === 0 ? 0 : Math.round(totals.doneUnits / totals.allUnits * 100);
-
-  useEffect(() => {
-    if (!loaded || totals.allUnits === 0) return;
-    let cancelled = false;
-    setRankLoading(true);
-    const timeout = window.setTimeout(() => {
-      const deviceId = getOrCreateAnonymousDeviceId();
-      void fetch('/api/analytics/track', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: 'score', deviceId, score: percent }),
-      }).then(async (response) => {
-        const data = await response.json().catch(() => ({})) as { percentile?: number | null; sampleSize?: number };
-        if (!cancelled && response.ok) {
-          setRank({ percentile: typeof data.percentile === 'number' ? data.percentile : null, sampleSize: Number(data.sampleSize) || 0 });
-        }
-      }).catch(() => undefined).finally(() => { if (!cancelled) setRankLoading(false); });
-    }, 900);
-    return () => { cancelled = true; window.clearTimeout(timeout); };
-  }, [loaded, percent, totals.allUnits]);
 
   const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId) || null;
   const selectedPlan = selectedSubject ? plans[selectedSubject.id] : undefined;
@@ -249,7 +227,7 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
     };
     setPlans((current) => ({ ...current, [selectedSubject.id]: plan }));
     setPlanMessage((dateResult.message ? dateResult.message + ' ' : '') +
-      'اتقسم المقرر على ' + dateResult.studyDates.length + ' يوم، وآخر يوم للمذاكرة قبل موعد الامتحان بـ١٢ ساعة على الأقل.');
+      'اتقسم المقرر على ' + dateResult.studyDates.length + ' يوم.');
   }
 
   function toggleEntry(subjectId: string, entryId: string, checked: boolean) {
@@ -314,19 +292,6 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
         </div>
       </section>
 
-      <section className="sm-rank-panel">
-        <div className="sm-rank-mark" aria-hidden="true">%</div>
-        <div>
-          <strong>
-            {rankLoading ? 'بنحسب ترتيب تقدمك…'
-              : rank && rank.percentile !== null ? 'أنت أفضل من ' + rank.percentile + '% من الدارسين المشاركين'
-                : 'لا يوجد ترتيب متاح حاليًا'}
-          </strong>
-          <p>{rank && rank.sampleSize > 0 ? 'المقارنة مبنية على ' + rank.sampleSize + ' جهاز مشارك.' : 'لسه مفيش بيانات مقارنة كفاية.'}</p>
-          <small>تفاصيل جدولك وعلامات الإنجاز محفوظة على جهازك فقط. للمقارنة بنرسل نسبة الإنجاز العامة ومعرّفًا عشوائيًا، من غير أسماء أو محتوى المقرر.</small>
-        </div>
-      </section>
-
       <section className="sm-subject-section">
         <div className="sm-section-heading">
           <div><h2>موادك</h2></div>
@@ -341,7 +306,8 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
             const previewMinutes = getSubjectUnits(subject).reduce((sum, unit) => sum + estimateStudyMinutes(unit.kind, unit.units), 0);
             const active = selectedSubjectId === subject.id;
             return (
-              <button type="button" key={subject.id} className={'sm-subject-card' + (active ? ' is-selected' : '')}
+              <div className="sm-subject-item" key={subject.id}>
+              <button type="button" className={'sm-subject-card' + (active ? ' is-selected' : '')}
                 onClick={() => openSubject(subject)} aria-pressed={active}>
                 <div className="sm-subject-card-top"><span className="sm-subject-index">{String(subjects.indexOf(subject) + 1).padStart(2, '0')}</span>
                   <span className="sm-open-label">{active ? 'مفتوحة' : 'افتح الخطة'} <b>↗</b></span></div>
@@ -353,13 +319,7 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
                   <span>{plan ? formatMinutes(plan.totalMinutes) : previewMinutes ? formatMinutes(previewMinutes) : '—'}</span>
                 </div>
               </button>
-            );
-          })}
-          {subjects.length === 0 && <div className="sm-empty">لسه مفيش مواد مضافة من الأدمن.</div>}
-        </div>
-      </section>
-
-      {selectedSubject && (
+                {active && selectedSubject && (
         <section className="sm-plan-workspace" aria-labelledby="sm-selected-title">
           <div className="sm-selected-heading">
             <div>
@@ -413,7 +373,7 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
           {selectedPlan && (
             <div className="sm-calendar-section">
               <div className="sm-calendar-heading">
-                <div><h3>تقويم المذاكرة</h3><p>خطة {modeLabel(selectedPlan.mode)} • آخر موعد للمذاكرة قبل الامتحان بـ١٢ ساعة</p></div>
+                <div><h3>تقويم المذاكرة</h3><p>خطة {modeLabel(selectedPlan.mode)}</p></div>
                 <div className="sm-calendar-total"><strong>{formatMinutes(selectedPlan.totalMinutes)}</strong><small>إجمالي الوقت المقترح</small></div>
               </div>
               <div className="sm-calendar-weekdays">
@@ -467,6 +427,13 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
         </section>
       )}
 
+              </div>
+            );
+          })}
+          {subjects.length === 0 && <div className="sm-empty">لسه مفيش مواد مضافة من الأدمن.</div>}
+        </div>
+      </section>
+
       <section className="sm-focus-panel">
         <div className="sm-focus-copy">
           <span className="sm-eyebrow">FOCUS SESSION</span>
@@ -494,7 +461,6 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
         </div>
       </section>
 
-      <p className="sm-local-footnote">كل جدول المذاكرة وعلامات الإنجاز والمؤقت محفوظين محليًا على الجهاز ده، ومش بيتشاركوا مع أي جهاز تاني.</p>
     </main>
   );
 }
