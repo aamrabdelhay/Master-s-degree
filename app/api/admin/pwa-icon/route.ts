@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
   const extension = mime === 'image/png' ? 'png' : mime === 'image/jpeg' ? 'jpg' : 'webp';
   try {
-    const blob = await put(`pwa-icons/app-icon.${extension}`, bytes, {
+    const blob = await put(`pwa-icons/app-icon.${extension}`, file, {
       access: 'public',
       addRandomSuffix: true,
       contentType: mime,
