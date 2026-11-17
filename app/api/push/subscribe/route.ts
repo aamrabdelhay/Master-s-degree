@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSite } from '@/lib/store';
 import { isKvConfigured } from '@/lib/kv';
-import { isPushDeliveryConfigured, isSafePushEndpoint, MAX_PUSH_SUBSCRIPTIONS, upsertPushSubscription, type StoredPushSubscription } from '@/lib/push';
+import { isPushSubscriptionConfigured, isSafePushEndpoint, MAX_PUSH_SUBSCRIPTIONS, upsertPushSubscription, type StoredPushSubscription } from '@/lib/push';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 export async function POST(request: NextRequest) {
   if (!isKvConfigured()) return NextResponse.json({ error: 'التخزين الدائم مش متوصل دلوقتي.' }, { status: 503 });
-  if (!isPushDeliveryConfigured()) return NextResponse.json({ error: 'خدمة التنبيهات لسه مش متجهزة على الموقع.' }, { status: 503 });
+  if (!isPushSubscriptionConfigured()) return NextResponse.json({ error: 'مفتاح الاشتراك العام للإشعارات غير متاح على الموقع.' }, { status: 503 });
   let body: unknown;
   try {
     const raw = await request.text();
