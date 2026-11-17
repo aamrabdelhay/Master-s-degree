@@ -957,7 +957,7 @@ header {
 }
 .study-mood-launcher:hover { transform: translateY(-2px); background: #1e293b; }
 .study-mood-page { max-width: 1120px; margin-top: 30px; margin-bottom: 90px; font-family: 'Cairo',sans-serif; }
-.sm-overview,.sm-rank-panel,.sm-plan-workspace,.sm-focus-panel {
+.sm-overview,.sm-plan-workspace,.sm-focus-panel {
   border: 1px solid rgba(197,160,89,.42); border-radius: 18px;
   background: rgba(255,255,255,.94); box-shadow: 0 12px 28px rgba(15,23,42,.07);
   margin-bottom: 22px; padding: 22px;
@@ -973,11 +973,6 @@ header {
 .sm-progress-track { margin: 10px 0 7px; }
 .sm-progress-track span,.sm-card-progress span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#0f172a,#c5a059); transition:width .2s; }
 .sm-progress-overview small { color:#64748b; font-size:.76rem; }
-.sm-rank-panel { display:flex; align-items:center; gap:15px; background:linear-gradient(120deg,#0f172a,#1e293b); color:#fff; border-color:var(--gold); }
-.sm-rank-mark { width:46px; height:46px; flex:none; display:grid; place-items:center; border-radius:13px; color:#0f172a; background:var(--gold); font:900 1.35rem 'Cairo',sans-serif; }
-.sm-rank-panel strong { color:#f4d58d; font-size:1rem; }
-.sm-rank-panel p { margin:4px 0; color:#dbe3ec; font-size:.8rem; }
-.sm-rank-panel small { display:block; color:#cbd5e1; font-size:.72rem; line-height:1.7; }
 .sm-subject-section { margin: 28px 0; }
 .sm-section-heading,.sm-calendar-heading,.sm-selected-heading { display:flex; align-items:center; justify-content:space-between; gap:15px; }
 .sm-section-heading { margin-bottom:14px; }
