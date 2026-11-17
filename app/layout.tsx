@@ -2,34 +2,44 @@ import type { Metadata, Viewport } from 'next';
 import AOSInit from '@/components/AOSInit';
 import PWARegister from '@/components/PWARegister';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
+import { getSite } from '@/lib/store';
 import './globals.css';
 
-export const metadata: Metadata = {
-  title: 'دبلومة القانون الخاص — جامعة العاصمة | جدول الامتحانات النهائية',
-  description:
-    'جدول الامتحانات النهائية لدبلومة القانون الخاص بجامعة العاصمة — المواعيد، شكل الامتحان، المقرر، الأسئلة المحددة، والملغي.',
-  applicationName: 'دبلومة القانون الخاص — جامعة العاصمة',
-  manifest: '/manifest.webmanifest',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'دبلومة القانون',
-  },
-  icons: {
-    icon: [
-      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-    ],
-    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
-  },
-  robots: { index: true, follow: true },
-  openGraph: {
-    title: 'دبلومة القانون الخاص — جامعة العاصمة',
-    description: 'جدول الامتحانات النهائية',
-    type: 'website',
-    locale: 'ar_EG',
-  },
-};
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getSite();
+  const iconUrl = site.pwaIconUrl || '/icon-192.png';
+  const iconType = site.pwaIconMime || 'image/png';
+
+  return {
+    title: 'دبلومة القانون الخاص — جامعة العاصمة | جدول الامتحانات النهائية',
+    description:
+      'جدول الامتحانات النهائية لدبلومة القانون الخاص بجامعة العاصمة — المواعيد، شكل الامتحان، المقرر، الأسئلة المحددة، والملغي.',
+    applicationName: 'دبلومة القانون الخاص — جامعة العاصمة',
+    manifest: '/manifest.webmanifest',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: 'دبلومة القانون',
+    },
+    icons: {
+      icon: [
+        { url: iconUrl, sizes: '192x192', type: iconType },
+        { url: iconUrl, sizes: '512x512', type: iconType },
+      ],
+      apple: [{ url: iconUrl, sizes: '180x180', type: iconType }],
+    },
+    robots: { index: true, follow: true },
+    openGraph: {
+      title: 'دبلومة القانون الخاص — جامعة العاصمة',
+      description: 'جدول الامتحانات النهائية',
+      type: 'website',
+      locale: 'ar_EG',
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: 'device-width',
