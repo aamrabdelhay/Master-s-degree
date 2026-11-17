@@ -47,6 +47,10 @@ export function isSafePushEndpoint(value: unknown): value is string {
       approvedHost && !url.username && !url.password && !url.hash;
   } catch { return false; }
 }
+export function isPushSubscriptionConfigured(): boolean {
+  // The browser only needs the public VAPID key to create its own subscription.
+  return Boolean(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim());
+}
 export function isPushDeliveryConfigured(): boolean {
   return Boolean(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() &&
     process.env.VAPID_PRIVATE_KEY?.trim() && process.env.VAPID_SUBJECT?.trim());
