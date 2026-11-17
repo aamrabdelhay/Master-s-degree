@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'إعدادات VAPID ناقصة أو غير صالحة.' }, { status: 503 });
   }
 
-  let body: { title?: unknown; message?: unknown; url?: unknown };
+  let body: { type?: unknown; title?: unknown; message?: unknown; url?: unknown };
   try {
     const raw = await request.text();
     if (Buffer.byteLength(raw, 'utf8') > 4096) return NextResponse.json({ error: 'الرسالة أكبر من المسموح.' }, { status: 413 });
@@ -36,10 +36,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'بيانات الإشعار غير صالحة.' }, { status: 400 });
   }
 
-  const title = typeof body.title === 'string' ? body.title.trim() : '';
-  const message = typeof body.message === 'string' ? body.message.trim() : '';
-  const url = typeof body.url === 'string' && /^\/(?!\/)/.test(body.url) && !/[\\\\\r\n]/.test(body.url)
-    ? body.url : '/';
+  const notificationType = body.type === undefined ? 'custom' : body.type;
+  if (notificationType !== 'site-update' && notificationType !== 'custom') {
+    return NextResponse.json({ error: 'نوع الإشعار غير معروف.' }, { status: 400 });
+  }
+
+  const isSiteUpdate = notificationType === 'site-update';
+  const title = isSiteUpdate
+    ? 'تم تحديث الموقع'
+    : typeof body.title === 'string' ? body.title.trim() : '';
+  const message = isSiteUpdate
+    ? 'تم تحديث موقع دبلومة القانون الخاص. افتح الموقع للاطلاع على آخر التحديثات.'
+    : typeof body.message === 'string' ? body.message.trim() : '';
+  const url = isSiteUpdate ? '/' :
+    typeof body.url === 'string' && body.url.length <= 500 &&
+    /^\/(?!\/)/.test(body.url) && !/[\\\\\r\n]/.test(body.url) ? body.url : '/';
 
   if (!title || title.length > 80) return NextResponse.json({ error: 'عنوان الإشعار مطلوب وبحد أقصى ٨٠ حرفًا.' }, { status: 400 });
   if (!message || message.length > 220) return NextResponse.json({ error: 'نص الإشعار مطلوب وبحد أقصى ٢٢٠ حرفًا.' }, { status: 400 });
@@ -51,13 +62,12 @@ export async function POST(request: NextRequest) {
     let sent = 0;
     let failed = 0;
     const expired = new Set<string>();
+    const tag = 'admin-' + notificationType + '-' + Date.now().toString(36);
     for (let start = 0; start < subscriptions.length; start += 20) {
       const batch = subscriptions.slice(start, start + 20);
       const results = await Promise.all(batch.map(async (subscription) => {
         try {
-          await deliverPush(subscription, {
-            title, body: message, url, tag: 'admin-' + Date.now().toString(36),
-          }, 86_400);
+          await deliverPush(subscription, { title, body: message, url, tag }, 86_400);
           return { ok: true, endpoint: subscription.endpoint };
         } catch (error) {
           const status = statusCodeFromError(error);
@@ -74,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
     const removedExpiredSubscriptions = await removePushSubscriptions([...expired]);
     return NextResponse.json({
-      ok: true, total: subscriptions.length, sent, failed, removedExpiredSubscriptions,
+      ok: true, type: notificationType, total: subscriptions.length, sent, failed, removedExpiredSubscriptions,
     }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
   } catch {
     return NextResponse.json({ error: 'حصل خطأ أثناء إرسال الإشعار.' }, { status: 500 });

@@ -3,14 +3,15 @@
 import { useEffect, useState } from 'react';
 import type { PublicSubject } from '@/lib/types';
 
-function useNow(intervalMs = 1000): number | null {
+function useNow(intervalMs = 1000, enabled = true): number | null {
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), intervalMs);
     return () => window.clearInterval(id);
-  }, [intervalMs]);
+  }, [intervalMs, enabled]);
 
   return now;
 }
@@ -81,8 +82,9 @@ function NumberedTextBox({
   );
 }
 
-export default function SubjectCard({ subject }: { subject: PublicSubject }) {
-  const now = useNow(1000);
+export default function SubjectCard({ subject, now: sharedNow }: { subject: PublicSubject; now?: number | null }) {
+  const localNow = useNow(1000, sharedNow === undefined);
+  const now = sharedNow === undefined ? localNow : sharedNow;
   const target = subject.examAtIso ? new Date(subject.examAtIso).getTime() : null;
   const finished = target !== null && now !== null && target - now <= 0;
 

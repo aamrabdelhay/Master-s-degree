@@ -9,8 +9,10 @@ function normalizeDigits(value: string): string {
     .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0));
 }
 function cleanLine(value: string): string {
-  return normalizeDigits(value).trim().replace(/^(?:[-*•▪◦‣]+)\s*/, '')
-    .replace(/^(?:\d+)\s*[.)、:-]\s*/u, '').trim();
+  const line = normalizeDigits(value).trim().replace(/^(?:[-*•▪◦‣]+)\s*/, '').trim();
+  const numericRange = /^\d+\s*(?:-|–|—|إلى|الى|حتى|لحد)\s*\d+\s*(?:(?:صفحة|صفحات|صفحه|ص|pages?))?$/i.test(line);
+  if (numericRange) return line;
+  return line.replace(/^\d+\s*[.)、:]\s*/u, '').replace(/^\d+\s*-\s*(?=\D)/u, '').trim();
 }
 
 /** A range from page 10 to page 20 is treated as 10 pages, as requested. */
@@ -21,25 +23,25 @@ export function parseStudyUnits(lines: string[]): ParsedStudyUnit[] {
     if (!line) return;
     const range = /(?:من\s*)?(?:(?:صفحة|صفحات|صفحه|ص|page|pages)\s*)?(\d+)\s*(?:إلى|الى|حتى|لحد|[-–—])\s*(?:(?:صفحة|صفحات|صفحه|ص|page|pages)\s*)?(\d+)(?:\s*(?:صفحة|صفحات|صفحه|ص|page|pages))?/i.exec(line);
     const hasPageMarker = /صفحة|صفحات|صفحه|ص\s*|page/i.test(line);
-    const isPlainRange = /^\s*\d+\s*(?:-|–|—|إلى|الى|حتى|لحد)\s*\d+\s*$/.test(line);
-    if (range && (hasPageMarker || /^من\s*/.test(line) || isPlainRange)) {
+    const isNumericRange = /^\s*\d+\s*(?:-|–|—|إلى|الى|حتى|لحد)\s*\d+\s*(?:(?:صفحة|صفحات|صفحه|ص|pages?))?\s*$/i.test(line);
+    if (range && (hasPageMarker || /^من\s*/.test(line) || isNumericRange)) {
       const first = Number(range[1]);
       const last = Number(range[2]);
       const units = Math.max(1, Math.min(10000, Math.abs(last - first)));
       result.push({ id: 'range-' + index, title: 'من صفحة ' + Math.min(first, last) + ' إلى صفحة ' + (Math.min(first, last) + units), kind: 'pages', units, startPage: Math.min(first, last) });
       return;
     }
+    const singlePage = /^(?:صفحة|صفحه|ص|page)\s*(?:رقم\s*)?(\d+)$/i.exec(line);
+    if (singlePage) {
+      result.push({ id: 'single-page-' + index, title: 'صفحة ' + singlePage[1], kind: 'pages', units: 1, startPage: Number(singlePage[1]) });
+      return;
+    }
     const explicitCount =
-      /(?:عدد\s*الصفحات|الصفحات|صفحات|صفحة|صفحه|pages?)\s*[:=]?\s*(\d+)/i.exec(line) ||
+      /(?:عدد\s*الصفحات|الصفحات|صفحات|pages?)\s*[:=]?\s*(\d+)/i.exec(line) ||
       /(\d+)\s*(?:صفحة|صفحات|صفحه|ورقة|ورقات|pages?)/i.exec(line);
     if (explicitCount) {
       const units = Math.max(1, Math.min(10000, Number(explicitCount[1])));
       result.push({ id: 'pages-' + index, title: line, kind: 'pages', units });
-      return;
-    }
-    const singlePage = /^(?:صفحة|صفحه|ص|page)\s*(\d+)$/i.exec(line);
-    if (singlePage) {
-      result.push({ id: 'single-page-' + index, title: 'صفحة ' + singlePage[1], kind: 'pages', units: 1, startPage: Number(singlePage[1]) });
       return;
     }
     result.push({ id: 'topic-' + index, title: line, kind: 'topic', units: 1 });

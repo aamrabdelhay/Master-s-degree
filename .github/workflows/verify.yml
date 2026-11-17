@@ -27,6 +27,8 @@ jobs:
         run: npm run typecheck
       - name: Study plan tests
         run: npm run test:study-plan
+      - name: Study Mood tests
+        run: npm run test:study-mood
       - name: Production build
         run: npm run build
         env:

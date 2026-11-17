@@ -629,3 +629,21 @@ textarea {
 .push-broadcast-panel { margin-top:22px; }
 .push-broadcast-help { color:#64748b; font-size:.82rem; line-height:1.8; margin:-4px 0 15px; }
 .push-broadcast-status { margin:12px 0 0; color:#166534; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:9px; padding:9px 12px; font-size:.8rem; line-height:1.8; }
+
+/* --------- نوعا إشعارات الإدارة --------- */
+.push-broadcast-modes { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 16px; }
+.push-broadcast-modes button {
+  border:1px solid #d5dde7; border-radius:9px; padding:9px 14px;
+  background:#fff; color:#334155; cursor:pointer; font:700 .8rem 'Cairo',sans-serif;
+}
+.push-broadcast-modes button.is-active {
+  border-color:#c5a059; background:#0f172a; color:#f4d58d;
+}
+.push-broadcast-preview {
+  display:grid; gap:7px; padding:15px; border:1px solid #e2e8f0;
+  border-radius:12px; background:#f8fafc; line-height:1.8;
+}
+.push-broadcast-preview > span { color:#9a793f; font-size:.7rem; font-weight:700; }
+.push-broadcast-preview strong { color:#0f172a; font-size:.95rem; }
+.push-broadcast-preview p { margin:0; color:#475569; font-size:.82rem; }
+.push-broadcast-preview small { color:#94a3b8; font-size:.7rem; }

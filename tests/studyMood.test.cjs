@@ -25,6 +25,18 @@ test('parses Arabic page shorthand and explicit page totals', () => {
   assert.equal(units[1].units, 12);
 });
 
+test('does not confuse a single page number with a page count', () => {
+  const units = parseStudyUnits(['صفحة ١٠', 'ص ٢٠', 'عدد الصفحات: ٣٥']);
+  assert.deepEqual(units.map((item) => item.units), [1, 1, 35]);
+  assert.deepEqual(units.map((item) => item.kind), ['pages', 'pages', 'pages']);
+});
+
+test('preserves bare page ranges while stripping numbered topic labels', () => {
+  const units = parseStudyUnits(['١٠-٢٠', 'من ٣٠ لحد ٤٠', '١- نظرية العقد']);
+  assert.deepEqual(units.map((item) => item.kind), ['pages', 'pages', 'topic']);
+  assert.deepEqual(units.slice(0, 2).map((item) => item.units), [10, 10]);
+});
+
 test('treats ordinary syllabus lines as topics', () => {
   const units = parseStudyUnits(['نظرية العقد', 'أركان المسؤولية التقصيرية']);
   assert.deepEqual(units.map((item) => item.kind), ['topic', 'topic']);
