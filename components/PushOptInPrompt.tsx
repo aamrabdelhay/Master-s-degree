@@ -75,10 +75,6 @@ export default function PushOptInPrompt() {
 
   async function enable() {
     if (busy) return;
-    if (iosNeedsHome) {
-      setMessage('على iPhone: افتح «مشاركة» ثم «إضافة إلى الشاشة الرئيسية»، وبعدها افتح الموقع من الأيقونة وفعّل التنبيهات.');
-      return;
-    }
     if (!publicKey) {
       setMessage('إعدادات التنبيهات غير مكتملة على الموقع.');
       return;
@@ -87,7 +83,7 @@ export default function PushOptInPrompt() {
     setMessage('');
     try {
       const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
-      if (permission !== 'granted') throw new Error('لازم تسمح للموقع بإرسال الإشعارات من نافذة المتصفح.');
+      if (permission !== 'granted') throw new Error('لم يتم منح إذن الإشعارات.');
       const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
       const ready = await navigator.serviceWorker.ready;
       const existing = await ready.pushManager.getSubscription();
@@ -114,7 +110,7 @@ export default function PushOptInPrompt() {
     }
   }
 
-  if (!visible || hasSubscription) return null;
+  if (!visible || hasSubscription || iosNeedsHome) return null;
 
   return (
     <aside className="push-optin-card" aria-label="تفعيل إشعارات الموقع">
@@ -128,7 +124,7 @@ export default function PushOptInPrompt() {
         <strong>فعّل إشعارات الموقع</strong>
         <p>{message || 'خليك متابع مواعيد الامتحانات وأي إعلان جديد من الإدارة.'}</p>
         <div className="push-optin-actions">
-          <button type="button" onClick={enable} disabled={busy}>{busy ? 'جارٍ التفعيل…' : iosNeedsHome ? 'طريقة التفعيل' : 'تفعيل الإشعارات'}</button>
+          <button type="button" onClick={enable} disabled={busy}>{busy ? 'جارٍ التفعيل…' : 'تفعيل الإشعارات'}</button>
           <button type="button" className="push-optin-dismiss" onClick={dismiss} aria-label="إغلاق">لاحقًا</button>
         </div>
       </div>

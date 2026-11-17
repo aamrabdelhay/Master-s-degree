@@ -89,7 +89,7 @@ function getPlanDates(
     horizon = cairoDateKey(new Date(deadline));
   } else {
     horizon = addPlanDays(today, mode === 'until-exam' || mode === 'week' ? 6 : 30);
-    if (mode === 'until-exam') note = 'موعد الامتحان غير محدد؛ اتعمل جدول أسبوع مؤقت لحد ما تضيف الموعد.';
+    if (mode === 'until-exam') note = 'موعد الامتحان غير محدد؛ اتعمل جدول أسبوع مؤقت.';
   }
 
   if (mode === 'week' || (mode === 'until-exam' && !examAtIso)) {
@@ -108,7 +108,7 @@ function getPlanDates(
   if (mode === 'until-exam' && !examAtIso) studyDates = candidates.slice(0, 7);
 
   if (studyDates.length === 0) {
-    return { studyDates: [], calendarDates: [], message: 'اختار يوم واحد على الأقل من أيام المذاكرة المتاحة.' };
+    return { studyDates: [], calendarDates: [], message: 'لا توجد أيام مذاكرة محددة.' };
   }
 
   const calendarEnd = mode === 'week' || (mode === 'until-exam' && !examAtIso)
@@ -221,18 +221,18 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
     if (!selectedSubject) return;
     const customValue = customPages.trim() ? Number(customPages) : null;
     if (customValue !== null && (!Number.isInteger(customValue) || customValue < 1 || customValue > 10000)) {
-      setPlanMessage('عدد الصفحات لازم يكون من ١ إلى ١٠٠٠٠.');
+      setPlanMessage('قيمة عدد الصفحات غير صالحة.');
       return;
     }
     const parsed = customValue
       ? [{ id: 'manual-pages', title: 'عدد الصفحات اللي حددته', kind: 'pages' as const, units: customValue, startPage: 1 }]
       : parsedUnits;
     if (parsed.length === 0) {
-      setPlanMessage('المقرر فاضي. اكتب المقرر في صفحة الأدمن أو أدخل عدد الصفحات يدويًا.');
+      setPlanMessage('لا يوجد محتوى مقرر متاح لهذه المادة.');
       return;
     }
     if (selectedDays.length === 0) {
-      setPlanMessage('اختار أيام المذاكرة الأول.');
+      setPlanMessage('لم يتم تحديد أيام للمذاكرة.');
       return;
     }
     const dateResult = getPlanDates(mode, selectedSubject.examAtIso, selectedDays);
@@ -306,7 +306,6 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
         <div className="sm-overview-copy">
           <span className="sm-eyebrow">YOUR STUDY SPACE</span>
           <h1>مساحة المذاكرة</h1>
-          <p>اختار المادة، حدّد أيامك، وسيب تقسيم المقرر والوقت المقترح علينا.</p>
         </div>
         <div className="sm-progress-overview">
           <div><span>إنجاز خطتك</span><strong>{percent}%</strong></div>
@@ -321,7 +320,7 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
           <strong>
             {rankLoading ? 'بنحسب ترتيب تقدمك…'
               : rank && rank.percentile !== null ? 'أنت أفضل من ' + rank.percentile + '% من الدارسين المشاركين'
-                : 'ابدأ إنجاز المهام عشان يظهر ترتيبك'}
+                : 'لا يوجد ترتيب متاح حاليًا'}
           </strong>
           <p>{rank && rank.sampleSize > 0 ? 'المقارنة مبنية على ' + rank.sampleSize + ' جهاز مشارك.' : 'لسه مفيش بيانات مقارنة كفاية.'}</p>
           <small>تفاصيل جدولك وعلامات الإنجاز محفوظة على جهازك فقط. للمقارنة بنرسل نسبة الإنجاز العامة ومعرّفًا عشوائيًا، من غير أسماء أو محتوى المقرر.</small>
@@ -330,7 +329,7 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
 
       <section className="sm-subject-section">
         <div className="sm-section-heading">
-          <div><h2>موادك</h2><p>اضغط على المادة عشان تفتح خطتها وتفاصيل تقسيم المقرر.</p></div>
+          <div><h2>موادك</h2></div>
           <span>{subjects.length} مواد</span>
         </div>
         <div className="sm-subject-grid">
@@ -399,7 +398,7 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
               <label className="sm-custom-pages">
                 <span>عدد صفحات مخصص (اختياري)</span>
                 <input type="number" inputMode="numeric" min="1" max="10000" value={customPages}
-                  placeholder="مثال: 120" onChange={(event) => setCustomPages(event.currentTarget.value)} />
+                  onChange={(event) => setCustomPages(event.currentTarget.value)} />
               </label>
               <div className="sm-detected-stats">
                 <span><b>{customPages ? Number(customPages) || 0 : parsedPages}</b> صفحة مكتشفة</span>
@@ -407,9 +406,6 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
                 <span>وقت مقترح: <b>{formatMinutes(customPages ? estimateStudyMinutes('pages', Number(customPages) || 0) : estimatedTotalMinutes)}</b></span>
               </div>
             </div>
-            <p className="sm-parser-note">
-              بنحسب نطاق الصفحات من الفرق بين الرقمين؛ مثال «من ص ١٠ إلى ص ٢٠» = ١٠ صفحات. السطور الأخرى بتتعامل كموضوعات مستقلة.
-            </p>
             <button type="button" className="sm-generate-button" onClick={generatePlan}>قسّم المقرر واعمل التقويم</button>
             {planMessage && <p className="sm-plan-message" role="status">{planMessage}</p>}
           </div>
@@ -475,7 +471,6 @@ export default function StudyMood({ subjects }: { subjects: PublicSubject[] }) {
         <div className="sm-focus-copy">
           <span className="sm-eyebrow">FOCUS SESSION</span>
           <h2>جلسة تركيز</h2>
-          <p>اختار مدة الجلسة أو اكتب وقتك، وابدأ مذاكرة من غير ما تخرج من الصفحة.</p>
           <div className="sm-timer-presets">
             {[25, 60, 90, 120, 180].map((minutes) => (
               <button type="button" key={minutes} className={timer.durationMinutes === minutes ? 'is-active' : ''}

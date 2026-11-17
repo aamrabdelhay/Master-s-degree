@@ -66,8 +66,8 @@ export default function PushNotifications({ subjects }: { subjects: PublicSubjec
         ? 'granted' : await Notification.requestPermission();
       if (permission !== 'granted') {
         setMessage(permission === 'denied'
-          ? 'إذن التنبيهات مرفوض من إعدادات المتصفح. فعّله من إعدادات الموقع أولًا.'
-          : 'محتاج تسمح بالتنبيهات عشان توصلك مواعيد الامتحانات.');
+          ? 'إذن التنبيهات غير متاح من المتصفح.'
+          : 'التنبيهات غير مفعّلة على هذا الجهاز.');
         return;
       }
       const registration = await navigator.serviceWorker.ready;
@@ -124,10 +124,7 @@ export default function PushNotifications({ subjects }: { subjects: PublicSubjec
       </div></div>
       {!supportChecked ? <p className="push-status">بنتأكد من دعم المتصفح…</p>
         : !supported ? <p className="push-status">المتصفح ده مش بيدعم تنبيهات الويب أو الموقع مش مفتوح على اتصال آمن.</p>
-        : iosNeedsHomeScreen ? <div className="push-ios-help">
-          على iPhone أو iPad، افتح الموقع في Safari واضغط «مشاركة» ثم «إضافة إلى الشاشة الرئيسية».
-          افتح الموقع من الأيقونة الجديدة، وبعدها تقدر تفعّل التنبيهات. دعم Web Push على iOS يبدأ من 16.4.
-        </div>
+        : iosNeedsHomeScreen ? <p className="push-status">تنبيهات الويب غير متاحة في وضع التصفح الحالي.</p>
         : !publicKey ? <p className="push-status">التنبيهات مش متاحة حاليًا؛ إعدادات VAPID لسه ما اتضافتش للموقع.</p>
         : <>
           <div className="push-preferences">

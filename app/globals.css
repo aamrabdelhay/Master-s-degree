@@ -931,12 +931,8 @@ header {
 .push-actions .push-disable-button {
   color: #fecaca; border-color: #b91c1c; background: #7f1d1d;
 }
-.push-status, .push-ios-help {
+.push-status {
   color: #64748b; margin: 13px 0 0; font-size: 0.88rem; line-height: 1.8;
-}
-.push-ios-help {
-  padding: 13px 15px; color: #334155; background: #fffbeb;
-  border: 1px solid #fcd34d; border-radius: 10px;
 }
 
 
@@ -1018,7 +1014,7 @@ header {
 .sm-custom-pages input,.sm-custom-timer input { border:1px solid #d5dde7; border-radius:8px; padding:8px 10px; font: .88rem 'Cairo',sans-serif; background:#fff; color:#0f172a; }
 .sm-detected-stats { color:#64748b; font-size:.78rem; }
 .sm-detected-stats b { color:#8a672d; }
-.sm-parser-note,.sm-plan-message { color:#64748b; font-size:.78rem; line-height:1.8; margin:12px 0; }
+.sm-plan-message { color:#64748b; font-size:.78rem; line-height:1.8; margin:12px 0; }
 .sm-plan-message { color:#166534; }
 .sm-generate-button { background:linear-gradient(135deg,#1e293b,#0f172a); border:1px solid var(--gold); color:#f4d58d; border-radius:10px; padding:11px 18px; font:700 .88rem 'Cairo',sans-serif; cursor:pointer; }
 .sm-generate-button:hover { background:#1e293b; }
