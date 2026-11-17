@@ -8,7 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test:study-plan": "node --test tests/studyPlan.test.cjs",
-    "test:study-mood": "node --test tests/studyMood.test.cjs"
+    "test:study-mood": "node --test tests/studyMood.test.cjs",
+    "test:subject-order": "node --test tests/subjectOrder.test.cjs"
   },
   "dependencies": {
     "@upstash/redis": "^1.41.0",
