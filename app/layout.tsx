@@ -10,7 +10,7 @@ export const revalidate = 0;
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSite();
-  const iconUrl = site.pwaIconUrl || '/icon-192.png';
+  const iconUrl = site.pwaIconUrl ? '/api/site-icon-image' : '/icon-192.png';
   const iconType = site.pwaIconMime || 'image/png';
 
   return {
