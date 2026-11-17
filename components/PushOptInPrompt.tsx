@@ -31,10 +31,6 @@ export default function PushOptInPrompt() {
   const [hasSubscription, setHasSubscription] = useState(false);
 
   useEffect(() => {
-    const canPush = window.isSecureContext &&
-      'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-    if (!canPush) return;
-
     let mounted = true;
     let timer: number | undefined;
     const reveal = (delay = 2400) => {
@@ -44,6 +40,8 @@ export default function PushOptInPrompt() {
       }, delay);
     };
 
+    // Detect iOS before checking PushManager: Safari on iPhone/iPad does not
+    // expose web-push until the site is installed as a Home Screen web app.
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const nav = navigator as NavigatorWithStandalone;
@@ -53,43 +51,50 @@ export default function PushOptInPrompt() {
       setIosNeedsHome(true);
       setMessage('على iPhone وiPad، أضف الموقع إلى الشاشة الرئيسية وافتحه من الأيقونة أولًا لتفعيل الإشعارات.');
       reveal();
-    } else if (Notification.permission === 'denied') {
-      setPermissionDenied(true);
-      setMessage('إشعارات الموقع محظورة من المتصفح. اسمح بها من إعدادات الموقع في المتصفح ثم افتح الموقع مرة أخرى.');
-      reveal();
-    } else if (Notification.permission !== 'granted') {
-      if (!publicKey) setMessage('إعدادات الإشعارات غير مكتملة على الموقع حاليًا.');
-      reveal();
     } else {
-      void (async () => {
-        try {
-          await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-          const registration = await navigator.serviceWorker.ready;
-          const subscription = await registration.pushManager.getSubscription();
-          if (!mounted) return;
-          if (!subscription) {
-            setMessage('إذن الإشعارات موجود، لكن الاشتراك على الجهاز لم يكتمل بعد.');
-            reveal(1200);
-            return;
-          }
+      const canPush = window.isSecureContext &&
+        'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
-          const response = await fetch('/api/push/subscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              subscription: subscription.toJSON(),
-              preference: { mode: 'all', subjectIds: [] },
-            }),
-          });
-          if (!response.ok) throw new Error('تعذّر تأكيد اشتراك الإشعارات على الموقع.');
-          if (!mounted) return;
-          setHasSubscription(true);
-        } catch {
-          if (!mounted) return;
-          setMessage('إذن الإشعارات موجود، لكن تعذّر تأكيد الاشتراك. أعد تفعيله من هنا.');
-          reveal(1200);
+      if (canPush) {
+        if (Notification.permission === 'denied') {
+          setPermissionDenied(true);
+          setMessage('إشعارات الموقع محظورة من المتصفح. اسمح بها من إعدادات الموقع في المتصفح ثم افتح الموقع مرة أخرى.');
+          reveal();
+        } else if (Notification.permission !== 'granted') {
+          if (!publicKey) setMessage('إعدادات الإشعارات غير مكتملة على الموقع حاليًا.');
+          reveal();
+        } else {
+          void (async () => {
+            try {
+              await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+              const registration = await navigator.serviceWorker.ready;
+              const subscription = await registration.pushManager.getSubscription();
+              if (!mounted) return;
+              if (!subscription) {
+                setMessage('إذن الإشعارات موجود، لكن الاشتراك على الجهاز لم يكتمل بعد.');
+                reveal(1200);
+                return;
+              }
+
+              const response = await fetch('/api/push/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  subscription: subscription.toJSON(),
+                  preference: { mode: 'all', subjectIds: [] },
+                }),
+              });
+              if (!response.ok) throw new Error('تعذّر تأكيد اشتراك الإشعارات على الموقع.');
+              if (!mounted) return;
+              setHasSubscription(true);
+            } catch {
+              if (!mounted) return;
+              setMessage('إذن الإشعارات موجود، لكن تعذّر تأكيد الاشتراك. أعد تفعيله من هنا.');
+              reveal(1200);
+            }
+          })();
         }
-      })();
+      }
     }
 
     return () => {
