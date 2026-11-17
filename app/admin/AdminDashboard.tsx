@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatCairoLabel } from '@/lib/cairo';
 import { DEFAULT_BOOK_URL } from '@/lib/defaults';
@@ -49,6 +50,8 @@ export default function AdminDashboard({
   const [toast, setToast] = useState<Toast>(null);
   const [showPassword, setShowPassword] = useState(false);
   const dirtyRef = useRef(false);
+  const pwaIconInput = useRef<HTMLInputElement>(null);
+  const [iconUploading, setIconUploading] = useState(false);
 
   useEffect(() => {
     dirtyRef.current = dirty;
@@ -222,6 +225,52 @@ export default function AdminDashboard({
     router.refresh();
   }
 
+  async function handlePwaIconUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setToast({ type: 'err', message: 'الصيغ المدعومة هي PNG وJPG وWEBP فقط.' });
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setToast({ type: 'err', message: 'حجم الصورة يجب ألا يتجاوز ٤ ميجابايت.' });
+      return;
+    }
+
+    setIconUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const response = await fetch('/api/admin/pwa-icon', { method: 'POST', body: form });
+      const data = await response.json().catch(() => ({})) as {
+        url?: string; contentType?: 'image/png' | 'image/jpeg' | 'image/webp'; error?: string;
+      };
+      if (response.status === 401) {
+        setToast({ type: 'err', message: 'الجلسة انتهت، سجّل الدخول تاني.' });
+        router.refresh();
+        return;
+      }
+      if (!response.ok || !data.url || !data.contentType) {
+        throw new Error(data.error || 'تعذّر رفع صورة التطبيق.');
+      }
+      setSite((current) => ({ ...current, pwaIconUrl: data.url, pwaIconMime: data.contentType }));
+      touch();
+      setToast({ type: 'ok', message: 'تم رفع الصورة. احفظ التغييرات لتطبيقها على الـPWA والإشعارات.' });
+    } catch (error) {
+      setToast({ type: 'err', message: error instanceof Error ? error.message : 'تعذّر رفع الصورة.' });
+    } finally {
+      setIconUploading(false);
+    }
+  }
+
+  function resetPwaIcon() {
+    if (!site.pwaIconUrl) return;
+    setSite((current) => ({ ...current, pwaIconUrl: undefined, pwaIconMime: undefined }));
+    touch();
+  }
+
+
   return (
     <div className="admin-shell">
       <div className="admin-topbar">
@@ -291,6 +340,39 @@ export default function AdminDashboard({
                   touch();
                 }}
               />
+            </div>
+          </div>
+        </section>
+
+        {/* ------- أيقونة التطبيق والإشعارات ------- */}
+        <section className="panel pwa-icon-panel">
+          <h2 className="panel-title">
+            <span className="dot" />
+            أيقونة التطبيق والإشعارات
+          </h2>
+          <div className="pwa-icon-controls">
+            {site.pwaIconUrl ? (
+              <img className="pwa-icon-preview" src={site.pwaIconUrl} alt="معاينة أيقونة التطبيق" />
+            ) : (
+              <div className="pwa-icon-preview pwa-icon-placeholder">الأيقونة الافتراضية</div>
+            )}
+            <div className="pwa-icon-actions">
+              <input
+                ref={pwaIconInput}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                hidden
+                onChange={handlePwaIconUpload}
+              />
+              <button type="button" className="btn btn-primary" onClick={() => pwaIconInput.current?.click()} disabled={iconUploading}>
+                {iconUploading ? 'جارٍ رفع الصورة…' : site.pwaIconUrl ? 'تغيير الصورة' : 'رفع صورة'}
+              </button>
+              {site.pwaIconUrl && (
+                <button type="button" className="btn btn-ghost" onClick={resetPwaIcon} disabled={iconUploading}>
+                  استخدام الأيقونة الافتراضية
+                </button>
+              )}
+              <small>ستُستخدم الصورة كأيقونة للتطبيق المثبّت وصورة للإشعارات. الصيغ: PNG أو JPG أو WEBP، بحد أقصى ٤ ميجابايت، والمقاس المربّع ٥١٢×٥١٢ هو الأنسب.</small>
             </div>
           </div>
         </section>
