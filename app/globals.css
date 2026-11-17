@@ -984,6 +984,8 @@ header {
 .sm-section-heading h2,.sm-calendar-heading h3 { margin:0; color:var(--primary); font-size:1.25rem; }
 .sm-section-heading > span { color:#8a672d; background:#fff; border:1px solid rgba(197,160,89,.5); border-radius:99px; padding:5px 11px; font-size:.78rem; }
 .sm-subject-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.sm-subject-item { min-width:0; display:flex; flex-direction:column; gap:12px; }
+.sm-subject-item .sm-plan-workspace { width:100%; min-width:0; margin:0; padding:15px; }
 .sm-subject-card { text-align:right; cursor:pointer; width:100%; min-width:0; padding:17px; border-radius:15px; border:1px solid rgba(197,160,89,.42); background:rgba(255,255,255,.94); box-shadow:0 8px 20px rgba(15,23,42,.055); color:var(--primary); font-family:'Cairo',sans-serif; transition:border-color .2s,transform .2s,box-shadow .2s; }
 .sm-subject-card:hover,.sm-subject-card.is-selected { border-color:var(--gold); transform:translateY(-2px); box-shadow:0 12px 26px rgba(15,23,42,.1); }
 .sm-subject-card-top,.sm-card-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; }
@@ -1057,7 +1059,6 @@ header {
 .sm-timer-actions { justify-content:center; }
 .sm-timer-actions button { border:1px solid var(--gold); border-radius:8px; padding:7px 12px; background:var(--gold); color:#0f172a; font:700 .76rem 'Cairo',sans-serif; cursor:pointer; }
 .sm-timer-actions button + button { background:transparent; color:#f4d58d; }
-.sm-local-footnote { color:#64748b; font-size:.76rem; text-align:center; line-height:1.8; }
 .subject-card.is-finished { position:relative; }
 .subject-card.is-finished::after { content:''; position:absolute; z-index:5; pointer-events:none; top:50%; left:1%; width:98%; height:4px; border-radius:99px; background:linear-gradient(90deg,rgba(197,160,89,.18),rgba(15,23,42,.78),rgba(197,160,89,.18)); box-shadow:0 1px 2px rgba(15,23,42,.18); }
 .subject-card.is-finished .timer-box.started { color:#f4d58d; font-family:'Cairo',sans-serif; letter-spacing:normal; animation:none; }
@@ -1065,6 +1066,7 @@ header {
   .study-mood-page { margin-top:20px; padding:0 10px; }
   .sm-overview,.sm-focus-panel { grid-template-columns:1fr; }
   .sm-subject-grid { grid-template-columns:1fr; }
+  .sm-subject-item .sm-plan-workspace { padding:12px; }
   .sm-calendar-weekdays,.sm-calendar-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .sm-calendar-weekdays { display:none; }
   .sm-calendar-cell.is-blank { display:none; }
