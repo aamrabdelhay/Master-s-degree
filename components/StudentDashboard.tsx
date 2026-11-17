@@ -105,7 +105,7 @@ export default function StudentDashboard({ subjects }: { subjects: PublicSubject
     event.currentTarget.value = '';
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      window.alert('حجم الملف كبير. اختار ملف أقل من 2 ميجابايت.');
+      window.alert('حجم ملف التقدم أكبر من الحد المسموح.');
       return;
     }
     try {
