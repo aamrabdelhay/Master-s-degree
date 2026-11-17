@@ -9,6 +9,29 @@ import type { QuestionGroup, SiteData, Subject } from '@/lib/types';
 import AnalyticsPanel from './AnalyticsPanel';
 import PushBroadcastPanel from './PushBroadcastPanel';
 
+async function normalizePwaIcon(file: File): Promise<File> {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('تعذّر تجهيز الصورة.');
+    const scale = Math.min(448 / bitmap.width, 448 / bitmap.height);
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.drawImage(bitmap, (512 - width) / 2, (512 - height) / 2, width, height);
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((result) => result ? resolve(result) : reject(new Error('تعذّر تجهيز الصورة.')), 'image/png');
+    });
+    return new File([blob], 'pwa-icon.png', { type: 'image/png', lastModified: Date.now() });
+  } finally {
+    bitmap.close();
+  }
+}
+
 function uid(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
@@ -240,8 +263,9 @@ export default function AdminDashboard({
 
     setIconUploading(true);
     try {
+      const normalizedFile = await normalizePwaIcon(file);
       const form = new FormData();
-      form.append('file', file);
+      form.append('file', normalizedFile);
       const response = await fetch('/api/admin/pwa-icon', { method: 'POST', body: form });
       const data = await response.json().catch(() => ({})) as {
         url?: string; contentType?: 'image/png' | 'image/jpeg' | 'image/webp'; error?: string;
@@ -256,7 +280,7 @@ export default function AdminDashboard({
       }
       setSite((current) => ({ ...current, pwaIconUrl: data.url, pwaIconMime: data.contentType }));
       touch();
-      setToast({ type: 'ok', message: 'تم رفع الصورة. احفظ التغييرات لتطبيقها على الـPWA والإشعارات.' });
+      setToast({ type: 'ok', message: 'تم تجهيز الصورة بمقاس 512×512 ورفعها. احفظ التغييرات لتطبيقها على الـPWA والإشعارات.' });
     } catch (error) {
       setToast({ type: 'err', message: error instanceof Error ? error.message : 'تعذّر رفع الصورة.' });
     } finally {
@@ -352,7 +376,7 @@ export default function AdminDashboard({
           </h2>
           <div className="pwa-icon-controls">
             {site.pwaIconUrl ? (
-              <img className="pwa-icon-preview" src="/api/site-icon-image" alt="معاينة أيقونة التطبيق" />
+              <img className="pwa-icon-preview" src={`/api/site-icon-image?v=${encodeURIComponent(site.pwaIconUrl.split("/").pop() || "custom")}`} alt="معاينة أيقونة التطبيق" />
             ) : (
               <div className="pwa-icon-preview pwa-icon-placeholder">الأيقونة الافتراضية</div>
             )}

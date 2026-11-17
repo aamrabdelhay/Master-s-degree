@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
     let sent = 0;
     let failed = 0;
     const expired = new Set<string>();
-    const tag = 'admin-' + notificationType + '-' + Date.now().toString(36);
+    // Keep one current announcement per type instead of stacking repeated broadcasts.
+  const tag = isSiteUpdate ? 'site-update' : 'admin-announcement';
     for (let start = 0; start < subscriptions.length; start += 20) {
       const batch = subscriptions.slice(start, start + 20);
       const results = await Promise.all(batch.map(async (subscription) => {

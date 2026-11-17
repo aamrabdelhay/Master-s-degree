@@ -17,7 +17,7 @@ self.addEventListener('push', (event) => {
         const settings = await response.json();
         if (typeof settings.pwaIconUrl === 'string') {
           const iconUrl = new URL(settings.pwaIconUrl, self.location.origin);
-          if (iconUrl.origin === self.location.origin) {
+          if (iconUrl.origin === self.location.origin && iconUrl.pathname === '/api/site-icon-image') {
             icon = iconUrl.href;
           }
         }
@@ -27,10 +27,10 @@ self.addEventListener('push', (event) => {
     }
 
     await self.registration.showNotification(title, {
-      body, icon, badge: icon,
+      body, icon, badge: '/icon-192.png',
       dir: 'rtl', lang: 'ar',
       tag: typeof payload.tag === 'string' ? payload.tag : 'law-diploma-exam',
-      renotify: false, data: { url },
+      renotify: false, timestamp: Date.now(), data: { url },
     });
   })());
 });

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { MetadataRoute } from 'next';
 import { getSite } from '@/lib/store';
 
@@ -6,7 +7,10 @@ export const revalidate = 0;
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const site = await getSite();
-  const customIcon = site.pwaIconUrl ? '/api/site-icon-image' : null;
+  const iconVersion = site.pwaIconUrl
+    ? createHash('sha256').update(site.pwaIconUrl).digest('hex').slice(0, 12)
+    : null;
+  const customIcon = iconVersion ? `/api/site-icon-image?v=${iconVersion}` : null;
   const contentType = site.pwaIconMime || 'image/png';
 
   return {
@@ -23,9 +27,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     theme_color: '#0f172a',
     icons: customIcon
       ? [
-          { src: customIcon, sizes: '192x192', type: contentType, purpose: 'any' },
           { src: customIcon, sizes: '512x512', type: contentType, purpose: 'any' },
-          { src: customIcon, sizes: '512x512', type: contentType, purpose: 'maskable' },
         ]
       : [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

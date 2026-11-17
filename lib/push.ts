@@ -99,6 +99,6 @@ export async function deliverPush(subscription: StoredPushSubscription, payload:
   const webSubscription: WebPushSubscription = { endpoint: subscription.endpoint, keys: subscription.keys };
   await sendNotification(webSubscription, JSON.stringify(payload), {
     TTL: Math.max(60, Math.min(86_400, Math.floor(ttlSeconds))),
-    urgency: 'high', topic: payload.tag.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32),
+    urgency: 'normal', topic: payload.tag.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32),
   });
 }

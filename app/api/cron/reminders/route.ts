@@ -49,8 +49,8 @@ export async function GET(request: NextRequest) {
       const delta = examAtMs - now;
       const dateLabel = formatCairoLabel(subject.examAt) || subject.examAt || '';
       const reminders = [
-        { kind: '24h' as const, offset: 24 * 60 * MINUTE_MS, body: 'الامتحان بعد ٢٤ ساعة — ' + dateLabel },
-        { kind: '1h' as const, offset: 60 * MINUTE_MS, body: 'الامتحان بعد ساعة — ' + dateLabel },
+        { kind: '24h' as const, offset: 24 * 60 * MINUTE_MS, body: 'متبقي ٢٤ ساعة على موعد الامتحان. الموعد: ' + dateLabel },
+        { kind: '1h' as const, offset: 60 * MINUTE_MS, body: 'متبقي ساعة واحدة على موعد الامتحان. الموعد: ' + dateLabel },
       ];
       for (const reminder of reminders) {
         if (Math.abs(delta - reminder.offset) > REMINDER_WINDOW_MS) continue;
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
           jobs.push({
             subscription, endpoint: subscription.endpoint,
             key: reminderLedgerKey(subscription.endpoint, subject.id, examAtIso, reminder.kind),
-            title: subject.name, body: reminder.body,
+            title: 'موعد امتحان ' + subject.name, body: reminder.body,
             url: '/#' + encodeURIComponent(subject.id),
             tag: 'exam-' + subject.id + '-' + reminder.kind,
             ttl: Math.max(60, Math.floor(delta / 1000)),

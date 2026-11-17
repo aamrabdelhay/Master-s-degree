@@ -49,7 +49,7 @@ export async function GET() {
     return new Response(result.stream, {
       headers: {
         'Content-Type': site.pwaIconMime || result.blob.contentType || 'image/png',
-        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        'Cache-Control': 'public, max-age=31536000, immutable',
         'X-Content-Type-Options': 'nosniff',
       },
     });
