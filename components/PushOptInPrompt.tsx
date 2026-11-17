@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   canUseWebPush, getOrCreateSubscription, isInAppBrowser, registerPushWorker,
 } from '@/lib/pushClient';
@@ -36,10 +36,22 @@ export default function PushOptInPrompt() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [done, setDone] = useState(false);
+  const enableRef = useRef<() => void>(() => undefined);
+  const reshowTimer = useRef<number | undefined>(undefined);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (reshowTimer.current !== undefined) window.clearTimeout(reshowTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
     let timer: number | undefined;
+    let onFirstTouch: ((event: Event) => void) | undefined;
     const show = (next: Mode, text = '', delay = 1500) => {
       setMode(next);
       setMessage(text);
@@ -61,6 +73,17 @@ export default function PushOptInPrompt() {
       show('denied', 'الإشعارات محظورة من المتصفح. اسمح بها من إعدادات الموقع (أيقونة القفل جنب الرابط) ثم أعد تحميل الصفحة.');
     } else if (Notification.permission === 'default') {
       show('ask', 'خليك متابع مواعيد الامتحانات وأي إعلان جديد من الإدارة.');
+      // The browser only allows its permission dialog after a user gesture, so the very
+      // first tap/click anywhere on the page asks for it directly (no card needed).
+      onFirstTouch = (event: Event) => {
+        const target = event.target as Element | null;
+        if (target && target.closest && target.closest('.push-optin-card')) return;
+        document.removeEventListener('click', onFirstTouch!, true);
+        document.removeEventListener('touchend', onFirstTouch!, true);
+        enableRef.current();
+      };
+      document.addEventListener('click', onFirstTouch, true);
+      document.addEventListener('touchend', onFirstTouch, true);
     } else {
       // Permission already granted: make sure this device is subscribed with the
       // current key and known to the server, silently and without touching preferences.
@@ -79,8 +102,20 @@ export default function PushOptInPrompt() {
     return () => {
       mounted = false;
       if (timer !== undefined) window.clearTimeout(timer);
+      if (onFirstTouch) {
+        document.removeEventListener('click', onFirstTouch, true);
+        document.removeEventListener('touchend', onFirstTouch, true);
+      }
     };
   }, [publicKey]);
+
+  // Closing the card only hides it for a while: it comes back until the device is subscribed.
+  function dismiss() {
+    setVisible(false);
+    if (reshowTimer.current !== undefined) window.clearTimeout(reshowTimer.current);
+    const delay = mode === 'ask' || mode === 'retry' ? 45_000 : 120_000;
+    reshowTimer.current = window.setTimeout(() => { if (mounted.current) setVisible(true); }, delay);
+  }
 
   async function enable() {
     if (busy || !publicKey) return;
@@ -111,6 +146,8 @@ export default function PushOptInPrompt() {
     }
   }
 
+  enableRef.current = () => { void enable(); };
+
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -140,10 +177,10 @@ export default function PushOptInPrompt() {
             </button>
           )}
           {mode === 'unsupported' && <button type="button" onClick={copyLink}>نسخ الرابط</button>}
-          <button type="button" className="push-optin-dismiss" onClick={() => setVisible(false)}>لاحقًا</button>
+          <button type="button" className="push-optin-dismiss" onClick={dismiss}>لاحقًا</button>
         </div>
       </div>
-      <button type="button" className="push-optin-close" onClick={() => setVisible(false)} aria-label="إغلاق التنبيه">×</button>
+      <button type="button" className="push-optin-close" onClick={dismiss} aria-label="إغلاق التنبيه">×</button>
     </aside>
   );
 }
