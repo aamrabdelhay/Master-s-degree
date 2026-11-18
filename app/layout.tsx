@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import AOSInit from '@/components/AOSInit';
 import PWARegister from '@/components/PWARegister';
-import PushOptInPrompt from '@/components/PushOptInPrompt';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { getVersionedPwaIconUrl } from '@/lib/pwa-icon';
 import { getSite } from '@/lib/store';
@@ -71,7 +70,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {children}
-        <PushOptInPrompt />
         <AnalyticsTracker />
         <PWARegister />
         <AOSInit />
