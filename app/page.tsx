@@ -1,5 +1,6 @@
 import SubjectList from '@/components/SubjectList';
 import StudyMoodLauncher from '@/components/StudyMoodLauncher';
+import PushOptInPrompt from '@/components/PushOptInPrompt';
 import { toPublicSubjects } from '@/lib/normalize';
 import { getSite } from '@/lib/store';
 
@@ -18,6 +19,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <PushOptInPrompt />
       <div className="bg-legal" aria-hidden="true">
         ⚖
       </div>
