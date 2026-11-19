@@ -107,6 +107,57 @@ function mergeExecutionTopicGroups(site: SiteData): SiteData {
   };
 }
 
+const CONSUMER_PROTECTION_TOPICS_MIGRATION = 'consumer-protection-license-transfer-topics-v1';
+
+const CONSUMER_PROTECTION_TOPICS = [
+  'تعريف التكنولوجيا',
+  'تعريف عقد الترخيص',
+  'مصادر نقل التكنولوجيا',
+  'الشروط المقيدة للمستورد في عقد الترخيص',
+  'التزامات أطراف عقد الترخيص',
+  '(التزامات المورد)',
+  'الجزاءات الناشئة عن إخلال المرخص لالتزاماته العقدية',
+  'فض المنازعات الناشئة عن عقد الترخيص',
+];
+
+/** إضافة موضوعات نقل التكنولوجيا إلى متابعة مقرر حماية المستهلك مرة واحدة دون حذف التقدم الحالي. */
+function migrateConsumerProtectionTopics(site: SiteData): SiteData {
+  const migrations = site.migrations ?? [];
+  if (migrations.includes(CONSUMER_PROTECTION_TOPICS_MIGRATION)) return site;
+
+  const subject = site.subjects.find((entry) => entry.name.includes('حماية المستهلك'));
+  if (!subject) return site;
+
+  const existingTopics = new Set(
+    subject.progress
+      .split(/\\r?\\n/)
+      .map((value) => value.replace(/^\\s*(?:(?:\\d+|[٠-٩۰-۹]+)\\s*[.)،:-]\\s*|[-*•▪◦‣]+\\s*)/u, ''))
+      .map(topicKey)
+      .filter(Boolean),
+  );
+  const missingTopics = CONSUMER_PROTECTION_TOPICS.filter(
+    (topic) => !existingTopics.has(topicKey(topic)),
+  );
+
+  const subjects = missingTopics.length
+    ? site.subjects.map((entry) =>
+        entry.id === subject.id
+          ? {
+              ...entry,
+              progress: [entry.progress.trim(), ...missingTopics].filter(Boolean).join('\\n'),
+            }
+          : entry,
+      )
+    : site.subjects;
+
+  return {
+    ...site,
+    subjects,
+    migrations: [...migrations, CONSUMER_PROTECTION_TOPICS_MIGRATION],
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export type AuthRecord = {
   passwordHash: string;
   createdAt: string;
@@ -128,7 +179,8 @@ export async function getSite(): Promise<SiteData> {
         : normalized.updatedAt;
     const site = { ...normalized, updatedAt: rawUpdatedAt };
     const executionMigrated = migrateExecutionTopics(site);
-    const migrated = mergeExecutionTopicGroups(executionMigrated);
+    const groupsMerged = mergeExecutionTopicGroups(executionMigrated);
+    const migrated = migrateConsumerProtectionTopics(groupsMerged);
     if (migrated !== site) {
       // ترحيل آمن لمرة واحدة: إذا تعذر الحفظ نعرض البيانات المهاجرة مؤقتًا ولا نكسر الصفحة.
       try {
