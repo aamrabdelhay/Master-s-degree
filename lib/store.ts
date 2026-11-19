@@ -130,8 +130,8 @@ function migrateConsumerProtectionTopics(site: SiteData): SiteData {
 
   const existingTopics = new Set(
     subject.progress
-      .split(/\\r?\\n/)
-      .map((value) => value.replace(/^\\s*(?:(?:\\d+|[٠-٩۰-۹]+)\\s*[.)،:-]\\s*|[-*•▪◦‣]+\\s*)/u, ''))
+      .split(/\r?\n/)
+      .map((value) => value.replace(/^\s*(?:(?:\d+|[٠-٩۰-۹]+)\s*[.)،:-]\s*|[-*•▪◦‣]+\s*)/u, ''))
       .map(topicKey)
       .filter(Boolean),
   );
@@ -144,7 +144,7 @@ function migrateConsumerProtectionTopics(site: SiteData): SiteData {
         entry.id === subject.id
           ? {
               ...entry,
-              progress: [entry.progress.trim(), ...missingTopics].filter(Boolean).join('\\n'),
+              progress: [entry.progress.trim(), ...missingTopics].filter(Boolean).join('\n'),
             }
           : entry,
       )
