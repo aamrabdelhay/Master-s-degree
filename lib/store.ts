@@ -107,6 +107,38 @@ function mergeExecutionTopicGroups(site: SiteData): SiteData {
   };
 }
 
+const EXECUTION_SIX_TOPICS_MIGRATION = 'execution-six-topics-replacement-v1';
+
+/** استبدال قائمة موضوعات التنفيذ القديمة بالموضوعات الستة المعتمدة مرة واحدة. */
+function replaceExecutionTopicsWithSix(site: SiteData): SiteData {
+  const migrations = site.migrations ?? [];
+  if (migrations.includes(EXECUTION_SIX_TOPICS_MIGRATION)) return site;
+
+  const subject = site.subjects.find(
+    (entry) => entry.name.includes('مرافعات') || entry.name.includes('التنفيذ الجبري'),
+  );
+  if (!subject) return site;
+
+  const subjects = site.subjects.map((entry) =>
+    entry.id === subject.id
+      ? {
+          ...entry,
+          groups: DEFAULT_EXECUTION_GROUPS.map((group) => ({
+            ...group,
+            items: group.items.map((item) => ({ ...item })),
+          })),
+        }
+      : entry,
+  );
+
+  return {
+    ...site,
+    subjects,
+    migrations: [...migrations, EXECUTION_SIX_TOPICS_MIGRATION],
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 const CONSUMER_PROTECTION_TOPICS_MIGRATION = 'consumer-protection-license-transfer-topics-v1';
 
 const CONSUMER_PROTECTION_TOPICS = [
@@ -180,7 +212,8 @@ export async function getSite(): Promise<SiteData> {
     const site = { ...normalized, updatedAt: rawUpdatedAt };
     const executionMigrated = migrateExecutionTopics(site);
     const groupsMerged = mergeExecutionTopicGroups(executionMigrated);
-    const migrated = migrateConsumerProtectionTopics(groupsMerged);
+    const consumerMigrated = migrateConsumerProtectionTopics(groupsMerged);
+    const migrated = replaceExecutionTopicsWithSix(consumerMigrated);
     if (migrated !== site) {
       // ترحيل آمن لمرة واحدة: إذا تعذر الحفظ نعرض البيانات المهاجرة مؤقتًا ولا نكسر الصفحة.
       try {
