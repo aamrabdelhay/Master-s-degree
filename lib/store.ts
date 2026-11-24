@@ -243,7 +243,7 @@ export async function getSite(): Promise<SiteData> {
     const executionMigrated = migrateExecutionTopics(site);
     const groupsMerged = mergeExecutionTopicGroups(executionMigrated);
     const consumerMigrated = migrateConsumerProtectionTopics(groupsMerged);
-    const migrated = replaceExecutionTopicsWithSix(consumerMigrated);
+    const migrated = migrateExamSchedule(replaceExecutionTopicsWithSix(consumerMigrated));
     if (migrated !== site) {
       // ترحيل آمن لمرة واحدة: إذا تعذر الحفظ نعرض البيانات المهاجرة مؤقتًا ولا نكسر الصفحة.
       try {
