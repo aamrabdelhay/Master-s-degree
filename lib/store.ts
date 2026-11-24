@@ -190,6 +190,36 @@ function migrateConsumerProtectionTopics(site: SiteData): SiteData {
   };
 }
 
+
+const EXAM_SCHEDULE_MIGRATION = 'exam-schedule-dec-2026-jan-2027-v1';
+
+/** إضافة مواعيد الامتحانات المعتمدة مرة واحدة مع الحفاظ على أي بيانات أخرى. */
+function migrateExamSchedule(site: SiteData): SiteData {
+  if ((site.migrations ?? []).includes(EXAM_SCHEDULE_MIGRATION)) return site;
+
+  const schedule: Array<{ match: (name: string) => boolean; examAt: string }> = [
+    { match: (name) => name.includes('مرافعات') || name.includes('التنفيذ الجبري'), examAt: '2026-12-16T12:00' },
+    { match: (name) => name.includes('شريعة') || name.includes('الشريعة'), examAt: '2026-12-23T12:00' },
+    { match: (name) => name.includes('حماية المستهلك'), examAt: '2026-12-23T12:00' },
+    { match: (name) => name.includes('المدني المقارن') || name.includes('القانون المدني المقارن'), examAt: '2026-12-23T12:00' },
+    { match: (name) => name.includes('الدولي الخاص'), examAt: '2026-12-30T12:00' },
+    { match: (name) => name.includes('المدني مع التعمق') || name.includes('القانون المدني مع التعمق'), examAt: '2027-01-13T12:00' },
+    { match: (name) => name.includes('قاعة البحث') || name.includes('قاعه البحث') || name.includes('مناهج البحث'), examAt: '2027-01-16T12:00' },
+  ];
+
+  const subjects = site.subjects.map((subject) => {
+    const entry = schedule.find(({ match }) => match(subject.name));
+    return entry ? { ...subject, examAt: entry.examAt } : subject;
+  });
+
+  return {
+    ...site,
+    subjects,
+    migrations: [...(site.migrations ?? []), EXAM_SCHEDULE_MIGRATION],
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export type AuthRecord = {
   passwordHash: string;
   createdAt: string;
