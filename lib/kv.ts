@@ -67,8 +67,14 @@ async function readBlobEntry(
   key: string,
 ): Promise<{ entry: BlobEntry; etag: string } | null> {
   const pathname = blobPath(key);
+  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  if (!token) {
+    throw new Error('BLOB_READ_WRITE_TOKEN is not configured for private persistent storage.');
+  }
+
   const result = await getBlob(pathname, {
     access: 'private',
+    token,
     useCache: false,
   });
 
