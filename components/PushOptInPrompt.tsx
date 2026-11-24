@@ -112,13 +112,21 @@ export default function PushOptInPrompt() {
         setMessage('لم يتم منح الإذن. تقدر تفعّلها من الزر مرة أخرى.');
         return;
       }
+      // Permission was granted: dismiss the opt-in card immediately.
+      // Subscription persistence runs afterwards and can be retried on a later visit.
+      setDone(true);
+      setVisible(false);
       const registration = await registerPushWorker();
       const subscription = await getOrCreateSubscription(registration, publicKey);
       await saveSubscription(subscription, mode === 'retry');
-      setDone(true);
-      setVisible(false);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'حصلت مشكلة أثناء تفعيل الإشعارات.');
+      if (Notification.permission !== 'granted') {
+        setMessage(error instanceof Error ? error.message : 'حصلت مشكلة أثناء تفعيل الإشعارات.');
+      } else {
+        // Do not keep the permission prompt visible after browser permission succeeds.
+        setDone(true);
+        setVisible(false);
+      }
     } finally {
       setBusy(false);
     }
