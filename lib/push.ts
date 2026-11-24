@@ -191,7 +191,7 @@ export async function removePushSubscriptions(endpoints: string[]): Promise<numb
   let removed = 0;
   for (const endpoint of endpoints) {
     const rows = await sql`DELETE FROM public.lawdiploma_push_subscriptions
-      WHERE endpoint_hash = ${endpointHash(endpoint)} RETURNING endpoint_hash`;
+      WHERE endpoint_hash = ${endpointHash(endpoint)} RETURNING endpoint_hash` as unknown as Array<{ endpoint_hash: string }>;
     removed += rows.length;
   }
   return removed;
