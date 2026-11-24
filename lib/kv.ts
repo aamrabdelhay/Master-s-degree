@@ -142,13 +142,13 @@ async function writeBlobEntry(
 export async function kvGetRaw(key: string): Promise<string | null> {
   const sql = getNeon();
   if (sql) {
-    const rows = await sql`
+    const rows = (await sql`
       SELECT value
       FROM public.lawdiploma_kv
       WHERE key = ${key}
         AND (expires_at IS NULL OR expires_at > now())
       LIMIT 1
-    `;
+    `) as unknown as Array<{ value: string }>;
     return typeof rows[0]?.value === 'string' ? rows[0].value : null;
   }
 
@@ -286,7 +286,7 @@ export async function kvDel(key: string): Promise<void> {
 export async function kvIncr(key: string, ttlSeconds: number): Promise<number> {
   const sql = getNeon();
   if (sql) {
-    const rows = await sql`
+    const rows = (await sql`
       INSERT INTO public.lawdiploma_kv (key, value, expires_at, updated_at)
       VALUES (${key}, '1', now() + (${ttlSeconds} * interval '1 second'), now())
       ON CONFLICT (key) DO UPDATE
@@ -304,7 +304,7 @@ export async function kvIncr(key: string, ttlSeconds: number): Promise<number> {
           END,
           updated_at = now()
       RETURNING value
-    `;
+    `) as unknown as Array<{ value: string }>;
     return Number(rows[0]?.value ?? 1);
   }
 
