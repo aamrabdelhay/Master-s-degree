@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { neon } from '@neondatabase/serverless';
 import { del as deleteBlobs, get as getBlob, list as listBlobs, put as putBlob } from '@vercel/blob';
 import { sendNotification, setVapidDetails, type PushSubscription as WebPushSubscription } from 'web-push';
 import { kvDel, kvGetJson, kvSetJson } from './kv';
@@ -138,139 +139,62 @@ async function countBlobEndpoints(): Promise<number> {
   return hashes.size;
 }
 
-export async function findPushSubscription(endpoint: string): Promise<StoredPushSubscription | null> {
-  if (hasPerEndpointBlobStorage()) return (await findBlobSubscription(endpoint)).subscription;
-  return (await listLegacyPushSubscriptions()).find((item) => item.endpoint === endpoint) || null;
+let neonPushClient: ReturnType<typeof neon> | null = null;
+function getPushDb() {
+  const url = process.env.DATABASE_URL?.trim();
+  if (!url) throw new Error('Neon database is not configured for push subscriptions.');
+  if (!neonPushClient) neonPushClient = neon(url);
+  return neonPushClient;
 }
-
-/** Migrate the previous shared array once; all new records are stored by endpoint. */
-async function migrateLegacyPushSubscriptions(): Promise<void> {
-  const legacy = await kvGetJson<unknown>(PUSH_SUBSCRIPTIONS_KEY);
-  if (!Array.isArray(legacy)) return;
-  const valid = legacy.filter(isStoredSubscription).slice(0, MAX_PUSH_SUBSCRIPTIONS);
-  for (const subscription of valid) await writeBlobSubscription(subscription);
-  await kvDel(PUSH_SUBSCRIPTIONS_KEY);
-}
-
-async function listBlobPushSubscriptions(): Promise<StoredPushSubscription[]> {
-  await migrateLegacyPushSubscriptions();
-  const paths = await listPushBlobPaths();
-  const latestByEndpoint = new Map<string, { pathname: string; version: string }>();
-  const recognized = new Set<string>();
-
-  for (const pathname of paths) {
-    const match = pathname.match(BLOB_PATH_RE);
-    if (!match) continue;
-    recognized.add(pathname);
-    const current = latestByEndpoint.get(match[1]);
-    if (!current || match[2] > current.version) {
-      latestByEndpoint.set(match[1], { pathname, version: match[2] });
-    }
-  }
-
-  const selected = [...latestByEndpoint.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
-    .slice(0, MAX_PUSH_SUBSCRIPTIONS);
-  const latestPaths = new Set([...latestByEndpoint.values()].map((item) => item.pathname));
-  const stalePaths = [...recognized].filter((pathname) => !latestPaths.has(pathname));
-  if (stalePaths.length > 0) {
-    const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-    if (!token) throw new Error('Private Blob storage is not configured for push subscriptions.');
-    await deleteBlobs(stalePaths, { token });
-  }
-
-  const subscriptions: StoredPushSubscription[] = [];
-  for (let index = 0; index < selected.length; index += 25) {
-    const batch = selected.slice(index, index + 25);
-    const results = await Promise.all(batch.map(([, item]) => readBlobSubscription(item.pathname)));
-    for (let resultIndex = 0; resultIndex < results.length; resultIndex += 1) {
-      const subscription = results[resultIndex];
-      const expectedHash = batch[resultIndex][0];
-      if (subscription && endpointHash(subscription.endpoint) === expectedHash) subscriptions.push(subscription);
-    }
-  }
-  return subscriptions;
-}
-
-async function listLegacyPushSubscriptions(): Promise<StoredPushSubscription[]> {
-  const stored = await kvGetJson<unknown>(PUSH_SUBSCRIPTIONS_KEY);
-  return Array.isArray(stored) ? stored.filter(isStoredSubscription).slice(0, MAX_PUSH_SUBSCRIPTIONS) : [];
-}
-
-export async function listPushSubscriptions(): Promise<StoredPushSubscription[]> {
-  return hasPerEndpointBlobStorage()
-    ? listBlobPushSubscriptions()
-    : listLegacyPushSubscriptions();
-}
-
-export async function upsertPushSubscription(subscription: StoredPushSubscription): Promise<{ saved: boolean; count: number }> {
-  if (hasPerEndpointBlobStorage()) {
-    await migrateLegacyPushSubscriptions();
-    const { subscription: existing, oldPaths } = await findBlobSubscription(subscription.endpoint);
-    let total = 0;
-    if (!existing) {
-      total = await countBlobEndpoints();
-      if (total >= MAX_PUSH_SUBSCRIPTIONS) return { saved: false, count: total };
-    }
-    const stored: StoredPushSubscription = {
-      ...subscription,
-      createdAt: existing?.createdAt || subscription.createdAt,
-      updatedAt: new Date().toISOString(),
-    };
-    // One immutable private Blob per endpoint version prevents concurrent devices
-    // from overwriting one another through a shared read-modify-write array.
-    await writeBlobSubscription(stored);
-    if (oldPaths.length > 0) {
-      const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-      if (token) await deleteBlobs(oldPaths, { token }).catch(() => undefined);
-    }
-    return { saved: true, count: existing ? total : total + 1 };
-  }
-
-  const legacy = await listLegacyPushSubscriptions();
-  const existing = legacy.find((item) => item.endpoint === subscription.endpoint);
-  const stored: StoredPushSubscription = {
-    ...subscription,
-    createdAt: existing?.createdAt || subscription.createdAt,
-    updatedAt: new Date().toISOString(),
+type PushRow = {
+  endpoint_hash: string; endpoint: string; p256dh: string; auth: string;
+  subject_ids: string[] | null; created_at: string; updated_at: string;
+};
+function mapPushRow(row: PushRow): StoredPushSubscription {
+  return {
+    endpoint: row.endpoint,
+    keys: { p256dh: row.p256dh, auth: row.auth },
+    subjectIds: row.subject_ids,
+    createdAt: new Date(row.created_at).toISOString(),
+    updatedAt: new Date(row.updated_at).toISOString(),
   };
-  const index = legacy.findIndex((item) => item.endpoint === subscription.endpoint);
-  if (index >= 0) {
-    legacy[index] = stored;
-  } else {
-    if (legacy.length >= MAX_PUSH_SUBSCRIPTIONS) return { saved: false, count: legacy.length };
-    legacy.push(stored);
-  }
-  await kvSetJson(PUSH_SUBSCRIPTIONS_KEY, legacy);
-  return { saved: true, count: legacy.length };
 }
-
+export async function findPushSubscription(endpoint: string): Promise<StoredPushSubscription | null> {
+  const sql = getPushDb();
+  const rows = await sql`SELECT endpoint_hash, endpoint, p256dh, auth, subject_ids, created_at, updated_at
+    FROM public.lawdiploma_push_subscriptions WHERE endpoint_hash = ${endpointHash(endpoint)} LIMIT 1` as unknown as PushRow[];
+  return rows[0] ? mapPushRow(rows[0]) : null;
+}
+export async function listPushSubscriptions(): Promise<StoredPushSubscription[]> {
+  const sql = getPushDb();
+  const rows = await sql`SELECT endpoint_hash, endpoint, p256dh, auth, subject_ids, created_at, updated_at
+    FROM public.lawdiploma_push_subscriptions ORDER BY updated_at DESC LIMIT ${MAX_PUSH_SUBSCRIPTIONS}` as unknown as PushRow[];
+  return rows.map(mapPushRow);
+}
+export async function upsertPushSubscription(subscription: StoredPushSubscription): Promise<{ saved: boolean; count: number }> {
+  const sql = getPushDb();
+  const hash = endpointHash(subscription.endpoint);
+  await sql`INSERT INTO public.lawdiploma_push_subscriptions
+    (endpoint_hash, endpoint, p256dh, auth, subject_ids, created_at, updated_at)
+    VALUES (${hash}, ${subscription.endpoint}, ${subscription.keys.p256dh}, ${subscription.keys.auth},
+      ${subscription.subjectIds ? JSON.stringify(subscription.subjectIds) : null}::jsonb,
+      ${subscription.createdAt}, now())
+    ON CONFLICT (endpoint_hash) DO UPDATE SET
+      endpoint = EXCLUDED.endpoint, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth,
+      subject_ids = EXCLUDED.subject_ids, updated_at = now()`;
+  const rows = await sql`SELECT count(*)::int AS count FROM public.lawdiploma_push_subscriptions` as unknown as Array<{count:number}>;
+  return { saved: true, count: Number(rows[0]?.count ?? 0) };
+}
 export async function removePushSubscriptions(endpoints: string[]): Promise<number> {
   if (endpoints.length === 0) return 0;
-
-  if (hasPerEndpointBlobStorage()) {
-    await migrateLegacyPushSubscriptions();
-    const hashes = new Set(endpoints.map(endpointHash));
-    const paths = await listPushBlobPaths();
-    const matching = paths.filter((pathname) => {
-      const match = pathname.match(/^lawdiploma-push\/subscriptions\/([a-f0-9]{64})\//i);
-      return Boolean(match && hashes.has(match[1]));
-    });
-    if (matching.length > 0) {
-      const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-      if (!token) throw new Error('Private Blob storage is not configured for push subscriptions.');
-      await deleteBlobs(matching, { token });
-    }
-    return new Set(matching.map((pathname) =>
-      pathname.match(/^lawdiploma-push\/subscriptions\/([a-f0-9]{64})\//i)?.[1],
-    ).filter(Boolean)).size;
+  const sql = getPushDb();
+  let removed = 0;
+  for (const endpoint of endpoints) {
+    const rows = await sql`DELETE FROM public.lawdiploma_push_subscriptions
+      WHERE endpoint_hash = ${endpointHash(endpoint)} RETURNING endpoint_hash`;
+    removed += rows.length;
   }
-
-  const removed = new Set(endpoints);
-  const subscriptions = await listLegacyPushSubscriptions();
-  const next = subscriptions.filter((subscription) => !removed.has(subscription.endpoint));
-  if (next.length !== subscriptions.length) await kvSetJson(PUSH_SUBSCRIPTIONS_KEY, next);
-  return subscriptions.length - next.length;
+  return removed;
 }
 export async function removePushSubscription(endpoint: string): Promise<boolean> {
   return (await removePushSubscriptions([endpoint])) > 0;
