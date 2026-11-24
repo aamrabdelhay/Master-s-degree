@@ -1,3 +1,4 @@
+import { neon } from '@neondatabase/serverless';
 import { Redis } from '@upstash/redis';
 import { del as deleteBlob, get as getBlob, put } from '@vercel/blob';
 
@@ -11,10 +12,18 @@ type BlobKvGlobal = typeof globalThis & {
 
 const globalRef = globalThis as BlobKvGlobal;
 const BLOB_PREFIX = 'lawdiploma-kv';
+let neonClient: ReturnType<typeof neon> | null = null;
 
 function memory(): Map<string, MemoryEntry> {
   if (!globalRef.__lawdiplomaKv) globalRef.__lawdiplomaKv = new Map();
   return globalRef.__lawdiplomaKv;
+}
+
+function getNeon() {
+  const url = process.env.DATABASE_URL?.trim();
+  if (!url) return null;
+  if (!neonClient) neonClient = neon(url);
+  return neonClient;
 }
 
 function redisCredentials() {
@@ -41,7 +50,7 @@ function blobPath(key: string): string {
 
 export function isKvConfigured(): boolean {
   const { url, token } = redisCredentials();
-  return Boolean((url && token) || hasBlobToken());
+  return Boolean(process.env.DATABASE_URL?.trim() || (url && token) || hasBlobToken());
 }
 
 function getRedis(): Redis | null {
@@ -129,8 +138,20 @@ async function writeBlobEntry(
   });
 }
 
-/** قراءة نص خام من Redis أو Private Blob. */
+/** قراءة نص خام من Neon أو Redis أو Private Blob. */
 export async function kvGetRaw(key: string): Promise<string | null> {
+  const sql = getNeon();
+  if (sql) {
+    const rows = await sql`
+      SELECT value
+      FROM public.lawdiploma_kv
+      WHERE key = ${key}
+        AND (expires_at IS NULL OR expires_at > now())
+      LIMIT 1
+    `;
+    return typeof rows[0]?.value === 'string' ? rows[0].value : null;
+  }
+
   const redis = getRedis();
   if (redis) {
     const value = await redis.get<string>(key);
@@ -143,9 +164,6 @@ export async function kvGetRaw(key: string): Promise<string | null> {
     return record?.entry.value ?? null;
   }
 
-  // Keep only the login throttle best-effort in memory if persistent storage
-  // has not been connected. Site data and admin credentials are never read
-  // from per-instance memory in production.
   if (
     process.env.NODE_ENV === 'production' &&
     key.startsWith('lawdiploma:login-attempts:')
@@ -163,6 +181,30 @@ export async function kvSetRaw(
   value: string,
   ttlSeconds?: number,
 ): Promise<void> {
+  const sql = getNeon();
+  if (sql) {
+    if (ttlSeconds && ttlSeconds > 0) {
+      await sql`
+        INSERT INTO public.lawdiploma_kv (key, value, expires_at, updated_at)
+        VALUES (${key}, ${value}, now() + (${ttlSeconds} * interval '1 second'), now())
+        ON CONFLICT (key) DO UPDATE
+        SET value = EXCLUDED.value,
+            expires_at = EXCLUDED.expires_at,
+            updated_at = now()
+      `;
+    } else {
+      await sql`
+        INSERT INTO public.lawdiploma_kv (key, value, expires_at, updated_at)
+        VALUES (${key}, ${value}, NULL, now())
+        ON CONFLICT (key) DO UPDATE
+        SET value = EXCLUDED.value,
+            expires_at = NULL,
+            updated_at = now()
+      `;
+    }
+    return;
+  }
+
   const redis = getRedis();
   if (redis) {
     if (ttlSeconds) await redis.set(key, value, { ex: ttlSeconds });
@@ -180,7 +222,7 @@ export async function kvSetRaw(
 
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
-      'Persistent storage is not configured. Connect a private Vercel Blob store or Upstash Redis before saving data.',
+      'Persistent storage is not configured. Connect Neon, a private Vercel Blob store, or Upstash Redis before saving data.',
     );
   }
 
@@ -212,6 +254,12 @@ export async function kvSetJson(
 
 /** حذف مفتاح */
 export async function kvDel(key: string): Promise<void> {
+  const sql = getNeon();
+  if (sql) {
+    await sql`DELETE FROM public.lawdiploma_kv WHERE key = ${key}`;
+    return;
+  }
+
   const redis = getRedis();
   if (redis) {
     await redis.del(key);
@@ -234,8 +282,32 @@ export async function kvDel(key: string): Promise<void> {
   memory().delete(key);
 }
 
-/** زيادة عدّاد المحاولات، مع الحفاظ على TTL. */
+/** زيادة عدّاد المحاولات، مع الحفاظ على TTL وبعملية ذرية في قاعدة البيانات. */
 export async function kvIncr(key: string, ttlSeconds: number): Promise<number> {
+  const sql = getNeon();
+  if (sql) {
+    const rows = await sql`
+      INSERT INTO public.lawdiploma_kv (key, value, expires_at, updated_at)
+      VALUES (${key}, '1', now() + (${ttlSeconds} * interval '1 second'), now())
+      ON CONFLICT (key) DO UPDATE
+      SET value = CASE
+            WHEN public.lawdiploma_kv.expires_at IS NOT NULL
+              AND public.lawdiploma_kv.expires_at <= now()
+            THEN '1'
+            ELSE (public.lawdiploma_kv.value::bigint + 1)::text
+          END,
+          expires_at = CASE
+            WHEN public.lawdiploma_kv.expires_at IS NULL
+              OR public.lawdiploma_kv.expires_at <= now()
+            THEN now() + (${ttlSeconds} * interval '1 second')
+            ELSE public.lawdiploma_kv.expires_at
+          END,
+          updated_at = now()
+      RETURNING value
+    `;
+    return Number(rows[0]?.value ?? 1);
+  }
+
   const redis = getRedis();
   if (redis) {
     const value = await redis.incr(key);
@@ -244,7 +316,6 @@ export async function kvIncr(key: string, ttlSeconds: number): Promise<number> {
   }
 
   if (hasBlobToken()) {
-    // Optimistic concurrency avoids dropping simultaneous increments.
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const previous = await readBlobEntry(key);
       const current = Number(previous?.entry.value ?? '0') + 1;

@@ -17,7 +17,8 @@
     "next": "15.5.29",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "web-push": "3.6.7"
+    "web-push": "3.6.7",
+    "@neondatabase/serverless": "^1.0.2"
   },
   "devDependencies": {
     "@types/aos": "^3.0.7",
