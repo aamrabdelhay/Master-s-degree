@@ -3,12 +3,12 @@ import { Redis } from '@upstash/redis';
 
 type MemoryEntry = { value: string; expiresAt: number | null };
 
-type BlobKvGlobal = typeof globalThis & {
+type KvGlobal = typeof globalThis & {
   __lawdiplomaKv?: Map<string, MemoryEntry>;
   __lawdiplomaRedis?: Redis | null;
 };
 
-const globalRef = globalThis as BlobKvGlobal;
+const globalRef = globalThis as KvGlobal;
 let neonClient: ReturnType<typeof neon> | null = null;
 
 function memory(): Map<string, MemoryEntry> {
@@ -61,7 +61,7 @@ function readMemory(key: string): string | null {
   return entry.value;
 }
 
-/** قراءة نص خام من Neon أو Redis أو Private Blob. */
+/** قراءة نص خام من Neon أو Redis. */
 export async function kvGetRaw(key: string): Promise<string | null> {
   const sql = getNeon();
   if (sql) {
@@ -81,8 +81,6 @@ export async function kvGetRaw(key: string): Promise<string | null> {
     if (value === null || value === undefined) return null;
     return typeof value === 'string' ? value : JSON.stringify(value);
   }
-
-
 
   if (
     process.env.NODE_ENV === 'production' &&
@@ -132,11 +130,9 @@ export async function kvSetRaw(
     return;
   }
 
-
-
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
-      'Persistent storage is not configured. Connect Neon, a private Vercel Blob store, or Upstash Redis before saving data.',
+      'Persistent storage is not configured. Connect Neon PostgreSQL or Upstash Redis before saving data.',
     );
   }
 
@@ -180,8 +176,6 @@ export async function kvDel(key: string): Promise<void> {
     return;
   }
 
-
-
   if (process.env.NODE_ENV === 'production') {
     throw new Error('Persistent storage is not configured.');
   }
@@ -220,8 +214,6 @@ export async function kvIncr(key: string, ttlSeconds: number): Promise<number> {
     if (value === 1) await redis.expire(key, ttlSeconds);
     return value;
   }
-
-
 
   const current = Number(readMemory(key) ?? '0') + 1;
   const existing = memory().get(key);
