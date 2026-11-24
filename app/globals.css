@@ -180,18 +180,24 @@ header {
 
 /* --------- التايمر --------- */
 .timer-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: fit-content;
+  max-width: 100%;
   background: linear-gradient(145deg, #0f172a, #1e293b);
   color: var(--gold);
-  padding: 10px 20px;
-  border-radius: 12px;
+  padding: 6px 10px;
+  border-radius: 9px;
   font-family: 'Courier New', monospace;
-  font-weight: 900;
-  font-size: 1.1rem;
+  font-weight: 800;
+  font-size: 0.82rem;
   border: 1px solid var(--gold);
-  min-width: 160px;
+  min-width: 0;
   text-align: center;
   direction: ltr;
-  line-height: 1.5;
+  line-height: 1.35;
   white-space: nowrap;
 }
 
@@ -471,10 +477,12 @@ header {
   }
 
   .timer-box {
-    width: 100%;
+    width: fit-content;
     min-width: 0;
-    font-size: 1rem;
-    padding: 10px 12px;
+    max-width: 100%;
+    font-size: 0.76rem;
+    padding: 5px 8px;
+    align-self: flex-start;
   }
 
   .card-body {
