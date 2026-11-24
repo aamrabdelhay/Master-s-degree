@@ -280,7 +280,7 @@ export default function AdminDashboard({
       }
       setSite((current) => ({ ...current, pwaIconUrl: data.url, pwaIconMime: data.contentType }));
       touch();
-      setToast({ type: 'ok', message: 'تم تجهيز الصورة بمقاس 512×512 ورفعها. احفظ التغييرات لتطبيقها على الـPWA. (إشعارات الموقع بتستخدم اللوجو الأساسي.)' });
+      setToast({ type: 'ok', message: 'تم تجهيز الصورة بمقاس 512×512 وحفظها في قاعدة البيانات. احفظ التغييرات لتطبيقها على الـPWA. (إشعارات الموقع بتستخدم اللوجو الأساسي.)' });
     } catch (error) {
       setToast({ type: 'err', message: error instanceof Error ? error.message : 'تعذّر رفع الصورة.' });
     } finally {
@@ -320,7 +320,7 @@ export default function AdminDashboard({
         {!kvReady && (
           <div className="admin-note error">
             <strong>تنبيه: قاعدة البيانات المشتركة غير مربوطة.</strong>
-            التعديلات دلوقتي بتتحفظ في ذاكرة السيرفر وممكن تضيع. اربط Upstash / Vercel KV
+            التعديلات دلوقتي بتتحفظ في ذاكرة السيرفر وممكن تضيع. اربط Neon PostgreSQL (DATABASE_URL) أو Upstash Redis
             (KV_REST_API_URL و KV_REST_API_TOKEN) عشان كل الزوار يشوفوا نفس البيانات.
           </div>
         )}
@@ -376,7 +376,7 @@ export default function AdminDashboard({
           </h2>
           <div className="pwa-icon-controls">
             {site.pwaIconUrl ? (
-              <img className="pwa-icon-preview" src={`/api/site-icon-image?v=${encodeURIComponent(site.pwaIconUrl.split("/").pop() || "custom")}`} alt="معاينة أيقونة التطبيق" />
+              <img className="pwa-icon-preview" src={site.pwaIconUrl} alt="معاينة أيقونة التطبيق" />
             ) : (
               <div className="pwa-icon-preview pwa-icon-placeholder">الأيقونة الافتراضية</div>
             )}

@@ -1,7 +1,9 @@
-import { put } from '@vercel/blob';
+import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { kvSetJson } from '@/lib/kv';
 import { getAuth } from '@/lib/store';
 import { isAuthenticated } from '@/lib/auth';
+import { getPwaIconUrl, PWA_ICON_STORAGE_KEY, type StoredPwaIcon } from '@/lib/pwa-icon';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -31,11 +33,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'انتهت جلسة الأدمن. سجّل الدخول مرة أخرى.' }, { status: 401 });
   }
 
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) {
-    return NextResponse.json({ error: 'تخزين الصور غير متصل بالموقع. راجع إعداد BLOB_READ_WRITE_TOKEN في Vercel.' }, { status: 503 });
-  }
-
   let form: FormData;
   try {
     form = await request.formData();
@@ -61,24 +58,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'محتوى الملف لا يطابق صيغة الصورة.' }, { status: 400 });
   }
 
-  const extension = mime === 'image/png' ? 'png' : mime === 'image/jpeg' ? 'jpg' : 'webp';
+  const version = createHash('sha256').update(bytes).digest('hex').slice(0, 12);
+  const icon: StoredPwaIcon = {
+    version,
+    contentType: mime,
+    base64: Buffer.from(bytes).toString('base64'),
+    uploadedAt: new Date().toISOString(),
+  };
+
   try {
-    // The connected project token belongs to a private Blob store.
-    // Keep the icon private in storage and serve it through the authenticated app origin.
-    const blob = await put(`pwa-icons/app-icon.${extension}`, file, {
-      access: 'private',
-      addRandomSuffix: true,
-      contentType: mime,
-      token,
-    });
+    await kvSetJson(PWA_ICON_STORAGE_KEY, icon);
     return NextResponse.json(
-      { ok: true, url: blob.url, contentType: mime },
+      { ok: true, url: getPwaIconUrl(version), contentType: mime },
       { headers: { 'Cache-Control': 'no-store, max-age=0' } },
     );
   } catch (error) {
-    console.error('[pwa-icon-upload] Blob upload failed:', error);
+    console.error('[pwa-icon-upload] Database save failed:', error);
     return NextResponse.json(
-      { error: 'تعذّر رفع الصورة إلى مخزن الصور. راجع صلاحية BLOB_READ_WRITE_TOKEN والمخزن المرتبط به.' },
+      { error: 'تعذّر حفظ صورة التطبيق في قاعدة البيانات. تأكد من اتصال Neon ثم حاول مرة أخرى.' },
       { status: 503 },
     );
   }

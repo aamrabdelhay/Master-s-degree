@@ -1,9 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { Redis } from '@upstash/redis';
-import { del as deleteBlob, get as getBlob, put } from '@vercel/blob';
 
 type MemoryEntry = { value: string; expiresAt: number | null };
-type BlobEntry = { value: string; expiresAt: number | null };
 
 type BlobKvGlobal = typeof globalThis & {
   __lawdiplomaKv?: Map<string, MemoryEntry>;
@@ -11,7 +9,6 @@ type BlobKvGlobal = typeof globalThis & {
 };
 
 const globalRef = globalThis as BlobKvGlobal;
-const BLOB_PREFIX = 'lawdiploma-kv';
 let neonClient: ReturnType<typeof neon> | null = null;
 
 function memory(): Map<string, MemoryEntry> {
@@ -40,17 +37,9 @@ function redisCredentials() {
   return { url: url.trim(), token: token.trim() };
 }
 
-function hasBlobToken(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
-}
-
-function blobPath(key: string): string {
-  return `${BLOB_PREFIX}/${Buffer.from(key, 'utf8').toString('base64url')}.json`;
-}
-
 export function isKvConfigured(): boolean {
   const { url, token } = redisCredentials();
-  return Boolean(process.env.DATABASE_URL?.trim() || (url && token) || hasBlobToken());
+  return Boolean(process.env.DATABASE_URL?.trim() || (url && token));
 }
 
 function getRedis(): Redis | null {
@@ -70,72 +59,6 @@ function readMemory(key: string): string | null {
     return null;
   }
   return entry.value;
-}
-
-async function readBlobEntry(
-  key: string,
-): Promise<{ entry: BlobEntry; etag: string } | null> {
-  const pathname = blobPath(key);
-  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-  if (!token) {
-    throw new Error('BLOB_READ_WRITE_TOKEN is not configured for private persistent storage.');
-  }
-
-  const result = await getBlob(pathname, {
-    access: 'private',
-    token,
-    useCache: false,
-  });
-
-  if (!result) return null;
-  if (result.statusCode !== 200 || !result.stream) {
-    throw new Error(`Unexpected response while reading persistent key "${key}".`);
-  }
-
-  const raw = await new Response(result.stream).text();
-  let entry: unknown;
-  try {
-    entry = JSON.parse(raw);
-  } catch {
-    throw new Error(`Persistent value for "${key}" is not valid JSON.`);
-  }
-
-  if (
-    typeof entry !== 'object' ||
-    entry === null ||
-    typeof (entry as BlobEntry).value !== 'string' ||
-    !(
-      (entry as BlobEntry).expiresAt === null ||
-      typeof (entry as BlobEntry).expiresAt === 'number'
-    )
-  ) {
-    throw new Error(`Persistent value for "${key}" has an invalid shape.`);
-  }
-
-  const typed = entry as BlobEntry;
-  if (typed.expiresAt !== null && typed.expiresAt <= Date.now()) {
-    await deleteBlob(pathname, {
-      ifMatch: result.blob.etag,
-    });
-    return null;
-  }
-
-  return { entry: typed, etag: result.blob.etag };
-}
-
-async function writeBlobEntry(
-  key: string,
-  entry: BlobEntry,
-  etag?: string,
-): Promise<void> {
-  await put(blobPath(key), JSON.stringify(entry), {
-    access: 'private',
-    contentType: 'application/json',
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    cacheControlMaxAge: 60,
-    ...(etag ? { ifMatch: etag } : {}),
-  });
 }
 
 /** قراءة نص خام من Neon أو Redis أو Private Blob. */
@@ -159,10 +82,7 @@ export async function kvGetRaw(key: string): Promise<string | null> {
     return typeof value === 'string' ? value : JSON.stringify(value);
   }
 
-  if (hasBlobToken()) {
-    const record = await readBlobEntry(key);
-    return record?.entry.value ?? null;
-  }
+
 
   if (
     process.env.NODE_ENV === 'production' &&
@@ -212,13 +132,7 @@ export async function kvSetRaw(
     return;
   }
 
-  if (hasBlobToken()) {
-    await writeBlobEntry(key, {
-      value,
-      expiresAt: ttlSeconds ? Date.now() + ttlSeconds * 1000 : null,
-    });
-    return;
-  }
+
 
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
@@ -266,15 +180,7 @@ export async function kvDel(key: string): Promise<void> {
     return;
   }
 
-  if (hasBlobToken()) {
-    const record = await readBlobEntry(key);
-    if (record) {
-      await deleteBlob(blobPath(key), {
-        ifMatch: record.etag,
-      });
-    }
-    return;
-  }
+
 
   if (process.env.NODE_ENV === 'production') {
     throw new Error('Persistent storage is not configured.');
@@ -315,26 +221,7 @@ export async function kvIncr(key: string, ttlSeconds: number): Promise<number> {
     return value;
   }
 
-  if (hasBlobToken()) {
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      const previous = await readBlobEntry(key);
-      const current = Number(previous?.entry.value ?? '0') + 1;
-      const expiresAt =
-        previous?.entry.expiresAt ?? Date.now() + ttlSeconds * 1000;
 
-      try {
-        await writeBlobEntry(
-          key,
-          { value: String(current), expiresAt },
-          previous?.etag,
-        );
-        return current;
-      } catch (error) {
-        if (attempt === 4) throw error;
-      }
-    }
-    throw new Error('Could not update the persistent rate-limit counter.');
-  }
 
   const current = Number(readMemory(key) ?? '0') + 1;
   const existing = memory().get(key);

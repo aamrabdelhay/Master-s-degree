@@ -41,6 +41,12 @@ function safeUrl(value: unknown): string {
   return '';
 }
 
+function safePwaIconUrl(value: unknown): string {
+  const raw = str(value, MAX_URL).trim();
+  if (/^\/api\/site-icon-image\?v=[a-f0-9]{12}$/i.test(raw)) return raw;
+  return safeUrl(raw);
+}
+
 function normalizeItem(input: unknown, index: number): QuestionItem {
   const raw = (input ?? {}) as Record<string, unknown>;
   return {
@@ -103,7 +109,7 @@ export function normalizeSite(input: unknown): SiteData {
     headerTitle: text(raw.headerTitle, MAX_NAME).trim() || createDefaultSite().headerTitle,
     headerSubtitle: text(raw.headerSubtitle, MAX_NAME).trim() || createDefaultSite().headerSubtitle,
     subjects,
-    pwaIconUrl: safeUrl(raw.pwaIconUrl) || undefined,
+    pwaIconUrl: safePwaIconUrl(raw.pwaIconUrl) || undefined,
     pwaIconMime: raw.pwaIconMime === 'image/png' || raw.pwaIconMime === 'image/jpeg' || raw.pwaIconMime === 'image/webp'
       ? raw.pwaIconMime : undefined,
     migrations: Array.isArray(raw.migrations)
